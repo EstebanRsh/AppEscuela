@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request
+from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Request, Header
 from fastapi.responses import JSONResponse
 from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer
 from sqlalchemy.orm import joinedload
@@ -54,31 +55,38 @@ def loginUser(us:str, pw:str):
         return "Contraseña incorrecta!"
 
 @user.post("/users/add")
-def create_user(us: InputUser):
-# Primero, verificamos el token del usuario que hace la solicitud
-    token_data = Security.verify_token(req.headers)
-    if "username" not in token_data:
-        return JSONResponse(status_code=401, content={"message": "No estás autorizado"})
+def create_user(us: InputUser, authorization: str | None = Header(default=None)):
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
 
-    # Obtenemos el usuario que realiza la petición desde la base de datos
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "No estás autorizado o el token es inválido."})
+
     requesting_user_username = token_data["username"]
     requesting_user = session.query(User).filter(User.username == requesting_user_username).options(joinedload(User.userdetail)).first()
 
     if not requesting_user or requesting_user.userdetail.type != 'administrador':
         return JSONResponse(status_code=403, content={"message": "Permiso denegado. Se requiere rol de administrador."})
 
-    # Si el usuario es administrador, procedemos a crear el nuevo usuario
     try:
         newUser = User(us.username, us.password)
         newUserDetail = UserDetail(us.firstname, us.lastname, us.dni, us.type, us.email)
         newUser.userdetail = newUserDetail
         session.add(newUser)
         session.commit()
-        return JSONResponse(status_code=201, content="Usuario creado con éxito!")
+        return JSONResponse(status_code=201, content={"message": "Usuario creado con éxito!"})
+    
+    # --- INICIO DE LA CORRECCIÓN ---
+    except IntegrityError:
+        # Esta excepción se dispara si se viola una restricción UNIQUE (username o email)
+        session.rollback()
+        return JSONResponse(status_code=409, content={"message": "El nombre de usuario o el email ya existen."})
     except Exception as ex:
+        # El resto de los errores inesperados
         session.rollback()
         print("Error ---->> ", ex)
         return JSONResponse(status_code=500, content={"message": "Error interno al crear el usuario."})
+    # --- FIN DE LA CORRECCIÓN ---
     finally:
         session.close()
        

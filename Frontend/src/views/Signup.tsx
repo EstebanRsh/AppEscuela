@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Signup() {
@@ -14,24 +14,45 @@ function Signup() {
   const dniInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const typeSelectRef = useRef<HTMLSelectElement>(null);
-
+  const confirmPassInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
+  // Función para limpiar los campos del formulario
+  const clearForm = () => {
+    if (userInputRef.current) userInputRef.current.value = "";
+    if (passInputRef.current) passInputRef.current.value = "";
+    if (firstNameInputRef.current) firstNameInputRef.current.value = "";
+    if (lastNameInputRef.current) lastNameInputRef.current.value = "";
+    if (dniInputRef.current) dniInputRef.current.value = "";
+    if (emailInputRef.current) emailInputRef.current.value = "";
+    if (typeSelectRef.current) typeSelectRef.current.value = "alumno"; // Reset al valor por defecto
+    if (confirmPassInputRef.current) confirmPassInputRef.current.value = "";
+    setPassword(""); // Limpiar estado
+    setConfirmPassword(""); // Limpiar estado
+  };
   function handleSignup(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setMessage("Las contraseñas no coinciden.");
+      return;
+    }
+    setMessage(null);
 
     const username = userInputRef.current?.value ?? "";
-    const password = passInputRef.current?.value ?? "";
+
     const firstname = firstNameInputRef.current?.value ?? "";
     const lastname = lastNameInputRef.current?.value ?? "";
     const dni = parseInt(dniInputRef.current?.value ?? "0");
     const email = emailInputRef.current?.value ?? "";
     const type = typeSelectRef.current?.value ?? "alumno";
-
+    const token = localStorage.getItem("token") || "";
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
-
+    myHeaders.append("Authorization", `Bearer ${token}`);
     const raw = JSON.stringify({
       username,
       password,
@@ -49,16 +70,34 @@ function Signup() {
     };
 
     fetch(SIGNUP_URL, requestOptions)
-      .then((respond) => respond.json())
+      .then((response) => {
+        if (!response.ok) {
+          // Si la respuesta no es exitosa, leemos el mensaje de error del backend
+          return response.json().then((errorInfo) => {
+            throw new Error(errorInfo.message || "Ocurrió un error");
+          });
+        }
+        return response.json();
+      })
       .then((data) => {
-        setMessage(data);
-        // Redirigir o mostrar un mensaje de éxito/error
+        setMessage(data.message || "Usuario registrado con éxito.");
+        clearForm();
+        // Opcional: limpiar el formulario o redirigir
+        // navigate("/dashboard");
       })
       .catch((error) => {
-        console.log("error", error);
-        setMessage("Error al registrar el usuario.");
+        console.error("Error en el registro:", error);
+        setMessage(error.message);
       });
   }
+  //comprobar la coincidencia de contraseñas en tiempo real
+  useEffect(() => {
+    if (password && confirmPassword && password !== confirmPassword) {
+      setPasswordError("Las contraseñas no coinciden");
+    } else {
+      setPasswordError("");
+    }
+  }, [password, confirmPassword]);
 
   return (
     <div className="container mt-4">
@@ -123,6 +162,20 @@ function Signup() {
               />
             </div>
             <div className="col-md-6 mb-3">
+              <label htmlFor="inputConfirmPassword">Confirmar Contraseña</label>
+              <input
+                type="password"
+                className={`form-control ${passwordError ? "is-invalid" : ""}`}
+                id="inputConfirmPassword"
+                ref={confirmPassInputRef}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              {passwordError && (
+                <div className="invalid-feedback">{passwordError}</div>
+              )}
+            </div>
+            <div className="col-md-6 mb-3">
               <label htmlFor="inputEmail">Email</label>
               <input
                 type="email"
@@ -135,11 +188,7 @@ function Signup() {
           </div>
           <div className="mb-3">
             <label htmlFor="selectType">Tipo de Usuario</label>
-            <select
-              className="form-select"
-              id="selectType"
-              ref={typeSelectRef}
-            >
+            <select className="form-select" id="selectType" ref={typeSelectRef}>
               <option value="alumno">Alumno</option>
               <option value="profesor">Profesor</option>
               <option value="administrador">Administrador</option>
