@@ -257,3 +257,42 @@ def update_user(user_id: int, user_update: InputUserUpdate, authorization: str |
         return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
     finally:
         db_session.close()
+
+@user.get("/user/delete/{user_id}")
+def delete_user(user_id: int, authorization: str | None = Header(default=None)):
+    """
+    Elimina un usuario y sus datos asociados.
+    Solo accesible por administradores.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "Token inválido o no proporcionado."})
+
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+        
+        # Un admin no se puede eliminar a sí mismo
+        if admin_user.id == user_id:
+            return JSONResponse(status_code=400, content={"message": "No puedes eliminar tu propia cuenta."})
+
+        # Lógica de borrado simplificada
+        user_to_delete = db_session.query(User).filter(User.id == user_id).first()
+        if not user_to_delete:
+            return JSONResponse(status_code=404, content={"message": "Usuario no encontrado."})
+
+        # Gracias al 'cascade', solo necesitamos borrar el usuario principal.
+        db_session.delete(user_to_delete)
+        db_session.commit()
+        
+        return JSONResponse(status_code=200, content={"message": "Usuario eliminado con éxito."})
+
+    except Exception as ex:
+        db_session.rollback()
+        print(f"Error al eliminar usuario: {ex}")
+        return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
+    finally:
+        db_session.close()

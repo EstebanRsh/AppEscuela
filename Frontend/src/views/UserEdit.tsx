@@ -15,9 +15,6 @@ function UserEdit() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
 
-  // --- INICIO DE LA MODIFICACIÓN ---
-  // 1. Usaremos un solo estado para todo el formulario, en lugar de refs.
-  // Lo inicializamos con valores vacíos.
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -25,7 +22,35 @@ function UserEdit() {
     type: 'alumno',
     dni: 0,
   });
-  // --- FIN DE LA MODIFICACIÓN ---
+
+const handleDelete = () => {
+    // Usamos el nombre del usuario del formulario para un mensaje más amigable
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar a ${formData.first_name}? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    const token = localStorage.getItem("token") || "";
+    const DELETE_URL = `http://localhost:8000/user/delete/${userId}`;
+
+    fetch(DELETE_URL, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => { throw new Error(err.message || 'Error al eliminar'); });
+      }
+      return response.json();
+    })
+    .then(data => {
+      alert(data.message); // Mostramos el éxito
+      navigate('/dashboard'); // Y redirigimos al dashboard
+    })
+    .catch(error => {
+      setMessage(`Error: ${error.message}`); // Mostramos el error en la misma página de edición
+      console.error("Error al eliminar:", error);
+    });
+  };
 
   const [message, setMessage] = useState<string | null>(null);
 
@@ -139,6 +164,13 @@ function UserEdit() {
             </select>
           </div>
           <button type="submit" className="btn btn-success">Actualizar Usuario</button>
+          <button 
+              type="button" 
+              className="btn btn-danger ms-2"
+              onClick={handleDelete}
+            >
+              Eliminar Usuario
+            </button>
           <button type="button" className="btn btn-secondary ms-2" onClick={() => navigate('/dashboard')}>Cancelar</button>
           {message && <div className="alert alert-danger mt-3">{message}</div>}
         </form>
