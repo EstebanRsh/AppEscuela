@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request
+from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Request, Header
 from fastapi.responses import JSONResponse
 from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer
 from sqlalchemy.orm import joinedload
@@ -54,45 +55,75 @@ def loginUser(us:str, pw:str):
         return "Contraseña incorrecta!"
 
 @user.post("/users/add")
-def create_user(us: InputUser):
+def create_user(us: InputUser, authorization: str | None = Header(default=None)):
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "No estás autorizado o el token es inválido."})
+
+    requesting_user_username = token_data["username"]
+    requesting_user = session.query(User).filter(User.username == requesting_user_username).options(joinedload(User.userdetail)).first()
+
+    if not requesting_user or requesting_user.userdetail.type != 'administrador':
+        return JSONResponse(status_code=403, content={"message": "Permiso denegado. Se requiere rol de administrador."})
+
     try:
         newUser = User(us.username, us.password)
         newUserDetail = UserDetail(us.firstname, us.lastname, us.dni, us.type, us.email)
         newUser.userdetail = newUserDetail
         session.add(newUser)
         session.commit()
-        return "Usuario creado con éxito!"
+        return JSONResponse(status_code=201, content={"message": "Usuario creado con éxito!"})
+    
+    # --- INICIO DE LA CORRECCIÓN ---
+    except IntegrityError:
+        # Esta excepción se dispara si se viola una restricción UNIQUE (username o email)
+        session.rollback()
+        return JSONResponse(status_code=409, content={"message": "El nombre de usuario o el email ya existen."})
     except Exception as ex:
+        # El resto de los errores inesperados
         session.rollback()
         print("Error ---->> ", ex)
+        return JSONResponse(status_code=500, content={"message": "Error interno al crear el usuario."})
+    # --- FIN DE LA CORRECCIÓN ---
     finally:
         session.close()
        
 @user.post("/users/login")
 def login_user(us: InputLogin):
     try:
-        user = session.query(User).filter(User.username == us.username).first()
+        # Buscamos al usuario y cargamos su detalle en la misma consulta
+        user = session.query(User).options(joinedload(User.userdetail)).filter(User.username == us.username).first()
+        
         if user and user.password == us.password:
             tkn = Security.generate_token(user)
             if not tkn:
-                return {"message":"Error en la generación del token!"}
+                return JSONResponse(status_code=500, content={"message":"Error en la generación del token!"})
             else:
+                # Construimos el objeto de usuario explícitamente para la respuesta
+                user_details = {
+                    "id": user.userdetail.id,
+                    "first_name": user.userdetail.first_name,
+                    "last_name": user.userdetail.last_name,
+                    "dni": user.userdetail.dni,
+                    "type": user.userdetail.type,  # Clave para la lógica del frontend
+                    "email": user.userdetail.email
+                }
+                
                 res = {
                         "status": "success",
                         "token": tkn,
-                        "user": user.userdetail,
-                        "estado_del_tiempo":"llueve",
+                        "user": user_details, # Enviamos el diccionario que creamos
                         "message":"User logged in successfully!"
-                    } 
-                
-                print(res)
-                return res
+                    }
+                return JSONResponse(status_code=200, content=res)
         else:
             res= {"message": "Invalid username or password"}
-            print(res)
-            return res
+            return JSONResponse(status_code=401, content=res)
     except Exception as ex:
         print("Error ---->> ", ex)
+        return JSONResponse(status_code=500, content={"message":"Error interno en el servidor."})
     finally:
         session.close()
 

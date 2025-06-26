@@ -3,12 +3,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
 import PublicRoutes from "./components/router/PublicRoutes";
 import ProtectedRoutes from "./components/router/ProtectedRoutes";
+import AdminRoutes from "./components/router/AdminRoutes";
 import MainLayout from "./components/layouts/MainLayout";
 
 function App() {
   const Dashboard = lazy(() => import("./views/Dashboard"));
   const Notifications = lazy(() => import("./views/Notifications"));
   const Profile = lazy(() => import("./views/Profile"));
+  const Signup = lazy(() => import("./views/Signup"));
 
   return (
     <BrowserRouter>
@@ -16,6 +18,9 @@ function App() {
         <Route element={<PublicRoutes />}>
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
+        </Route>
+        <Route element={<AdminRoutes />}>
+          <Route path="/signup" element={<Signup />} />
         </Route>
 
         <Route element={<ProtectedRoutes />}>
