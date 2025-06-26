@@ -85,28 +85,37 @@ def create_user(us: InputUser):
 @user.post("/users/login")
 def login_user(us: InputLogin):
     try:
-        user = session.query(User).filter(User.username == us.username).first()
+        # Buscamos al usuario y cargamos su detalle en la misma consulta
+        user = session.query(User).options(joinedload(User.userdetail)).filter(User.username == us.username).first()
+        
         if user and user.password == us.password:
             tkn = Security.generate_token(user)
             if not tkn:
-                return {"message":"Error en la generación del token!"}
+                return JSONResponse(status_code=500, content={"message":"Error en la generación del token!"})
             else:
+                # Construimos el objeto de usuario explícitamente para la respuesta
+                user_details = {
+                    "id": user.userdetail.id,
+                    "first_name": user.userdetail.first_name,
+                    "last_name": user.userdetail.last_name,
+                    "dni": user.userdetail.dni,
+                    "type": user.userdetail.type,  # Clave para la lógica del frontend
+                    "email": user.userdetail.email
+                }
+                
                 res = {
                         "status": "success",
                         "token": tkn,
-                        "user": user.userdetail,
-                        "estado_del_tiempo":"llueve",
+                        "user": user_details, # Enviamos el diccionario que creamos
                         "message":"User logged in successfully!"
-                    } 
-                
-                print(res)
-                return res
+                    }
+                return JSONResponse(status_code=200, content=res)
         else:
             res= {"message": "Invalid username or password"}
-            print(res)
-            return res
+            return JSONResponse(status_code=401, content=res)
     except Exception as ex:
         print("Error ---->> ", ex)
+        return JSONResponse(status_code=500, content={"message":"Error interno en el servidor."})
     finally:
         session.close()
 
