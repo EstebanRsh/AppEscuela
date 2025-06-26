@@ -132,3 +132,35 @@ def update_payment(payment_id: int, payment_update: InputPayment, authorization:
         return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
     finally:
         db_session.close()
+
+@payment.delete("/payment/delete/{payment_id}")
+def delete_payment(payment_id: int, authorization: str | None = Header(default=None)):
+    """
+    Elimina un pago específico por su ID.
+    Solo para administradores.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "Token inválido."})
+
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+
+        payment_to_delete = db_session.query(Payment).filter(Payment.id == payment_id).first()
+        if not payment_to_delete:
+            return JSONResponse(status_code=404, content={"message": "Pago no encontrado."})
+
+        db_session.delete(payment_to_delete)
+        db_session.commit()
+        return JSONResponse(status_code=200, content={"message": "Pago eliminado con éxito."})
+
+    except Exception as e:
+        db_session.rollback()
+        return JSONResponse(status_code=500, content={"message": f"Error al eliminar el pago: {e}"})
+    finally:
+        db_session.close()
