@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 type LoginProcessResponse = {
@@ -8,129 +8,148 @@ type LoginProcessResponse = {
   message?: string;
 };
 
-function Login() {
+export default function Login() {
   const BACKEND_IP = "localhost";
   const BACKEND_PORT = "8000";
   const ENDPOINT = "users/login";
   const LOGIN_URL = `http://${BACKEND_IP}:${BACKEND_PORT}/${ENDPOINT}`;
 
-  const userInputRef = useRef<HTMLInputElement>(null);
-  const passInputRef = useRef<HTMLInputElement>(null);
-
-  const [message, setMessage] = useState<string | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [alert, setAlert] = useState<{ message: string } | null>(null);
   const navigate = useNavigate();
 
-  function loginProcess(dataObject: LoginProcessResponse) {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const userType = user.type; // ej: "administrador", "profesor", alumno.
-    if (dataObject.status === "success") {
-      localStorage.setItem("token", dataObject.token ?? "");
-      localStorage.setItem("user", JSON.stringify(dataObject.user));
-      setMessage("Initiating session...");
-      navigate("/dashboard");
-    } else {
-      setMessage(dataObject.message ?? "Unknown error");
-    }
-  }
-
-  function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
+    setAlert(null);
 
-    const username = userInputRef.current?.value ?? "";
-    const password = passInputRef.current?.value ?? "";
+    try {
+      const res = await fetch(LOGIN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
 
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
+      const data: LoginProcessResponse = await res.json();
 
-    const raw = JSON.stringify({ username, password });
-
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-    };
-
-    fetch(LOGIN_URL, requestOptions)
-      .then((respond) => respond.json())
-      .then((dataObject) => loginProcess(dataObject))
-      .catch((error) => console.log("error", error));
-  }
-
-  function checkNewPassword(p: any) {
-    //aca voy a checkear si la pass cyuample con lso requisitos minimos
-    const tieneNumero = /\d/.test(p);
-  }
-
-  function handleChangeHola(e: any) {
-    setNewPassword(e.target.value);
-  }
-
-  useEffect(() => {
-    //se ejecuta 2°
-    if (newPassword) checkNewPassword(newPassword);
-    console.log("hola");
-
-    //se ejecuta 1°
-    return () => {
-      console.log("pepito");
-    };
-  }, [newPassword]);
+      if (data.status === "success") {
+        localStorage.setItem("token", data.token ?? "");
+        localStorage.setItem("user", JSON.stringify(data.user));
+        navigate("/dashboard");
+      } else {
+        setAlert({ message: data.message || "Credenciales inválidas." });
+      }
+    } catch (error) {
+      setAlert({ message: "Error al conectar con el servidor." });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        className="card p-4 shadow-lg"
-        style={{ maxWidth: "400px", width: "100%" }}
-      >
-        <h1 className="text-center mb-3">Login</h1>
-        <form onSubmit={handleLogin}>
-          <div className="mb-3">
-            <label htmlFor="inputUser" className="form-label">
-              User
-            </label>
-            <input
-              type="text"
-              className="form-control"
-              id="inputUser"
-              ref={userInputRef}
-              aria-describedby="userHelp"
-            />
-            <div id="userHelp" className="form-text">
-              Nunca compartas tu cuenta con nadie.
+    <>
+      <div className="container">
+        <div className="row justify-content-center align-items-center vh-100">
+          <div className="col-11 col-sm-8 col-md-7 col-lg-5 col-xl-4">
+            <div className="card shadow-lg border-0 rounded-3 login-card-custom">
+              <div className="card-body p-4 p-sm-5 login-card-custom text-white bg-dark">
+                <div className="text-center mb-4">
+                  <h1 className="h3 fw-bold">Iniciar Sesión</h1>
+                  <p>Ingresa a la plataforma</p>
+                </div>
+
+                <form onSubmit={handleLogin} noValidate>
+                  <div className="mb-3">
+                    <label htmlFor="inputUser" className="form-label">
+                      Usuario
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="inputUser"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="inputPassword" className="form-label">
+                      Contraseña
+                    </label>
+                    <div className="input-group">
+                      <input
+                        type={isPasswordVisible ? "text" : "password"}
+                        className="form-control"
+                        id="inputPassword"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={isLoading}
+                      />
+                      <button
+                        className="btn btn-outline-warning"
+                        type="button"
+                        onClick={() =>
+                          setIsPasswordVisible(!isPasswordVisible)
+                        }
+                        aria-label={
+                          isPasswordVisible
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
+                      >
+                        <i
+                          className={`bi ${
+                            isPasswordVisible ? "bi-eye-slash" : "bi-eye"
+                          }`}
+                        ></i>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="d-grid mt-4">
+                    <button
+                      type="submit"
+                      className="btn btn-outline-warning"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <span
+                            className="spinner-border spinner-border-sm"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
+                          <span className="ms-2">Ingresando...</span>
+                        </>
+                      ) : (
+                        "Ingresar"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-
-          <div className="mb-4">
-            <label htmlFor="exampleInputPassword1" className="form-label">
-              Password
-            </label>
-            <input
-              type="password"
-              className="form-control"
-              id="exampleInputPassword1"
-              ref={passInputRef}
-            />
-          </div>
-
-          <input type="text" onChange={handleChangeHola} />
-
-          <button type="submit" className="btn btn-primary">
-            Submit
-          </button>
-          <span className="ms-3">{message}</span>
-        </form>
+        </div>
       </div>
-    </div>
+
+      {alert && (
+        <div
+          className="alert alert-danger position-fixed bottom-0 end-0 m-3 shadow-lg"
+          style={{ zIndex: 1050 }}
+          role="alert"
+        >
+          <i className="bi bi-exclamation-triangle-fill me-2"></i>
+          {alert.message}
+        </div>
+      )}
+    </>
   );
 }
 
-export default Login;

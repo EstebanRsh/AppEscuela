@@ -1,0 +1,14 @@
+body {
+  background-image: url("/Fondo.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center;
+  font-family: "Segoe UI", sans-serif;
+}
+
+
+.login-card-custom {
+  background-color: rgba(0, 0, 0, 0.7); /* oscuro translúcido */
+  color: white;
+}
