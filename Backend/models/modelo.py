@@ -11,9 +11,9 @@ class User(Base):
     username = Column( String(50), nullable=False, unique=True)
     password = Column(String(40))
     id_userdetail = Column(Integer, ForeignKey("userdetail.id"))
-    userdetail = relationship("UserDetail", uselist=False)
-    payments= relationship("Payment", uselist=True, back_populates="user")
-    pivoteusercareer = relationship("PivoteUserCareer", back_populates="user")
+    userdetail = relationship("UserDetail", uselist=False, cascade="all, delete-orphan", single_parent=True)
+    payments= relationship("Payment", uselist=True, cascade="all, delete-orphan")
+    pivoteusercareer = relationship("PivoteUserCareer", cascade="all, delete-orphan")
 
     def __init__(self, username, password):
         self.username = username
@@ -106,6 +106,13 @@ class InputPayment(BaseModel):
 class InputUserAddCareer(BaseModel):
     id_user: int
     id_career: int
+
+class InputUserUpdate(BaseModel):
+    first_name: str
+    last_name: str
+    dni: int
+    type: str
+    email: str
 # endregion
 
 # region configuraciones 

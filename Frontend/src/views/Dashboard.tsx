@@ -78,6 +78,16 @@ function Dashboard() {
                 <td>{user_item.last_name}</td>
                 <td>{user_item.type}</td>
                 <td>{user_item.email}</td>
+                {isAdmin && (
+                  <td>
+                    <Link 
+                      to={`/user/edit/${user_item.id}`} 
+                      className="btn btn-primary btn-sm me-2"
+                    >
+                      Editar
+                    </Link>
+                  </td>
+                )}
               </tr>
             ))
           ) : (

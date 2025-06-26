@@ -11,11 +11,18 @@ function Navbar() {
 
   return (
     <nav style={{ padding: "1rem", background: "#f0f0f0" }}>
-      <NavLink to="/dashboard" style={{ marginRight: "1rem" }} title="Dashboard">
+      <NavLink
+        to="/dashboard"
+        style={{ marginRight: "1rem" }}
+        title="Dashboard"
+      >
         Dashboard
       </NavLink>
       <NavLink to="/profile" style={{ marginRight: "1rem" }}>
         Profile
+      </NavLink>
+      <NavLink to="/payments" style={{ marginRight: "1rem" }}>
+        Pagos
       </NavLink>
       <NavLink to="/notifications" style={{ marginRight: "1rem" }}>
         Notifications
@@ -27,7 +34,7 @@ function Navbar() {
           Registrar Usuario
         </NavLink>
       )}
-      
+
       <NavLink to="/login" onClick={handleLogout}>
         Logout
       </NavLink>

@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from fastapi import APIRouter, Request, Header
 from fastapi.responses import JSONResponse
-from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer
+from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer, InputUserUpdate
 from sqlalchemy.orm import joinedload
 from auth.security import Security
 
@@ -167,3 +167,132 @@ def get_career_user(_username: str):
         print("Error al traer usuario y/o pagos")
     finally:
         session.close()
+
+@user.get("/user/{user_id}")
+def get_user_by_id(user_id: int, authorization: str | None = Header(default=None)):
+    """
+    Obtiene los detalles de un usuario específico por su ID.
+    Solo accesible por administradores.
+    """
+    # 1. Seguridad: Verificamos que quien pide la info sea un admin
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data:
+        # Reemplazamos HTTPException con JSONResponse
+        return JSONResponse(status_code=401, content={"message": "Token inválido o no proporcionado."})
+
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            # Reemplazamos HTTPException con JSONResponse
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+
+        # 2. Búsqueda del usuario solicitado
+        user_data = db_session.query(User).options(joinedload(User.userdetail)).filter(User.id == user_id).first()
+
+        if not user_data:
+            # Reemplazamos HTTPException con JSONResponse
+            return JSONResponse(status_code=404, content={"message": "Usuario no encontrado."})
+
+        # 3. Preparamos y devolvemos los datos
+        user_details = {
+            "id": user_data.id, # Usamos el id del User, no del UserDetail para consistencia
+            "first_name": user_data.userdetail.first_name,
+            "last_name": user_data.userdetail.last_name,
+            "dni": user_data.userdetail.dni,
+            "type": user_data.userdetail.type,
+            "email": user_data.userdetail.email
+        }
+        return JSONResponse(status_code=200, content=user_details)
+
+    except Exception as ex:
+        print(f"Error al obtener usuario: {ex}")
+        # Reemplazamos HTTPException con JSONResponse
+        return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
+    finally:
+        db_session.close()  
+
+@user.put("/user/update/{user_id}")
+def update_user(user_id: int, user_update: InputUserUpdate, authorization: str | None = Header(default=None)):
+    """
+    Actualiza los detalles de un usuario.
+    Solo accesible por administradores.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "Token inválido o no proporcionado."})
+
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+
+        # Buscamos al usuario que se quiere actualizar y su detalle
+        user_to_update = db_session.query(User).options(joinedload(User.userdetail)).filter(User.id == user_id).first()
+        
+        if not user_to_update:
+            return JSONResponse(status_code=404, content={"message": "Usuario a actualizar no encontrado."})
+
+        # Actualizamos los campos del UserDetail asociado
+        user_detail = user_to_update.userdetail
+        user_detail.first_name = user_update.first_name
+        user_detail.last_name = user_update.last_name
+        user_detail.dni = user_update.dni
+        user_detail.type = user_update.type
+        user_detail.email = user_update.email
+        
+        db_session.commit()
+        return JSONResponse(status_code=200, content={"message": "Usuario actualizado con éxito."})
+
+    except IntegrityError:
+        # Esto ocurre si el nuevo email ya está en uso por otro usuario
+        db_session.rollback()
+        return JSONResponse(status_code=409, content={"message": "El email ya está en uso por otro usuario."})
+    except Exception as ex:
+        db_session.rollback()
+        print(f"Error al actualizar usuario: {ex}")
+        return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
+    finally:
+        db_session.close()
+
+@user.get("/user/delete/{user_id}")
+def delete_user(user_id: int, authorization: str | None = Header(default=None)):
+    """
+    Elimina un usuario y sus datos asociados.
+    Solo accesible por administradores.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "Token inválido o no proporcionado."})
+
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+        
+        # Un admin no se puede eliminar a sí mismo
+        if admin_user.id == user_id:
+            return JSONResponse(status_code=400, content={"message": "No puedes eliminar tu propia cuenta."})
+
+        # Lógica de borrado simplificada
+        user_to_delete = db_session.query(User).filter(User.id == user_id).first()
+        if not user_to_delete:
+            return JSONResponse(status_code=404, content={"message": "Usuario no encontrado."})
+
+        # Gracias al 'cascade', solo necesitamos borrar el usuario principal.
+        db_session.delete(user_to_delete)
+        db_session.commit()
+        
+        return JSONResponse(status_code=200, content={"message": "Usuario eliminado con éxito."})
+
+    except Exception as ex:
+        db_session.rollback()
+        print(f"Error al eliminar usuario: {ex}")
+        return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
+    finally:
+        db_session.close()
