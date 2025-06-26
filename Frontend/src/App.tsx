@@ -9,6 +9,7 @@ function App() {
   const Dashboard = lazy(() => import("./views/Dashboard"));
   const Notifications = lazy(() => import("./views/Notifications"));
   const Profile = lazy(() => import("./views/Profile"));
+  const Signup = lazy(() => import("./views/Signup"));
 
   return (
     <BrowserRouter>
@@ -23,6 +24,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/signup" element={<Signup />} />
           </Route>
         </Route>
       </Routes>

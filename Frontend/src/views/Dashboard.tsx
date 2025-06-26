@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 function Dashboard() {
   const userName = JSON.parse(localStorage.getItem("user") || "{}").first_name;
@@ -41,8 +42,13 @@ function Dashboard() {
   }, []);
 
   return (
-    <div>
-      <h2>Dashboard</h2>
+    <div className="container mt-4">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Dashboard</h2>
+        <Link to="/signup" className="btn btn-success"> {/* Botón para registrar */}
+          Registrar Nuevo Usuario
+        </Link>
+      </div>
       <div>Bienvenido {userName}!</div>
       <table className="table-primary">
         <thead>

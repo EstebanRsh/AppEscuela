@@ -21,6 +21,11 @@ function Navbar() {
       <NavLink to="/notifications" style={{ marginRight: "1rem" }}>
         notifications
       </NavLink>
+      <NavLink to="/signup" style={{ marginRight: "1rem" }}>
+        {" "}
+        {/* Añadir el enlace */}
+        Registrar Usuario
+      </NavLink>
       <NavLink to="/login" onClick={handleLogout}>
         Logout
       </NavLink>
