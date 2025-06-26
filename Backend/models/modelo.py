@@ -106,6 +106,13 @@ class InputPayment(BaseModel):
 class InputUserAddCareer(BaseModel):
     id_user: int
     id_career: int
+
+class InputUserUpdate(BaseModel):
+    first_name: str
+    last_name: str
+    dni: int
+    type: str
+    email: str
 # endregion
 
 # region configuraciones 
