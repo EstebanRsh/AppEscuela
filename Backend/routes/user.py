@@ -55,16 +55,30 @@ def loginUser(us:str, pw:str):
 
 @user.post("/users/add")
 def create_user(us: InputUser):
+# Primero, verificamos el token del usuario que hace la solicitud
+    token_data = Security.verify_token(req.headers)
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "No estás autorizado"})
+
+    # Obtenemos el usuario que realiza la petición desde la base de datos
+    requesting_user_username = token_data["username"]
+    requesting_user = session.query(User).filter(User.username == requesting_user_username).options(joinedload(User.userdetail)).first()
+
+    if not requesting_user or requesting_user.userdetail.type != 'administrador':
+        return JSONResponse(status_code=403, content={"message": "Permiso denegado. Se requiere rol de administrador."})
+
+    # Si el usuario es administrador, procedemos a crear el nuevo usuario
     try:
         newUser = User(us.username, us.password)
         newUserDetail = UserDetail(us.firstname, us.lastname, us.dni, us.type, us.email)
         newUser.userdetail = newUserDetail
         session.add(newUser)
         session.commit()
-        return "Usuario creado con éxito!"
+        return JSONResponse(status_code=201, content="Usuario creado con éxito!")
     except Exception as ex:
         session.rollback()
         print("Error ---->> ", ex)
+        return JSONResponse(status_code=500, content={"message": "Error interno al crear el usuario."})
     finally:
         session.close()
        

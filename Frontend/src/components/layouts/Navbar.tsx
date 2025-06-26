@@ -6,26 +6,28 @@ function handleLogout() {
 }
 
 function Navbar() {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user && user.type === "administrador";
+
   return (
     <nav style={{ padding: "1rem", background: "#f0f0f0" }}>
-      <NavLink
-        to="/dashboard"
-        style={{ marginRight: "1rem" }}
-        title="Dashboard"
-      >
+      <NavLink to="/dashboard" style={{ marginRight: "1rem" }} title="Dashboard">
         Dashboard
       </NavLink>
       <NavLink to="/profile" style={{ marginRight: "1rem" }}>
         Profile
       </NavLink>
       <NavLink to="/notifications" style={{ marginRight: "1rem" }}>
-        notifications
+        Notifications
       </NavLink>
-      <NavLink to="/signup" style={{ marginRight: "1rem" }}>
-        {" "}
-        {/* Añadir el enlace */}
-        Registrar Usuario
-      </NavLink>
+
+      {/* Mostrar solo si es administrador */}
+      {isAdmin && (
+        <NavLink to="/signup" style={{ marginRight: "1rem" }}>
+          Registrar Usuario
+        </NavLink>
+      )}
+      
       <NavLink to="/login" onClick={handleLogout}>
         Logout
       </NavLink>

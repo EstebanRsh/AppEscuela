@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./components/Login";
 import PublicRoutes from "./components/router/PublicRoutes";
 import ProtectedRoutes from "./components/router/ProtectedRoutes";
+import AdminRoutes from "./components/router/AdminRoutes";
 import MainLayout from "./components/layouts/MainLayout";
 
 function App() {
@@ -18,13 +19,15 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
         </Route>
+        <Route element={<AdminRoutes />}>
+          <Route path="/signup" element={<Signup />} />
+        </Route>
 
         <Route element={<ProtectedRoutes />}>
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/signup" element={<Signup />} />
           </Route>
         </Route>
       </Routes>

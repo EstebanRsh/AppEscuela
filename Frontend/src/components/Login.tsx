@@ -23,6 +23,8 @@ function Login() {
   const navigate = useNavigate();
 
   function loginProcess(dataObject: LoginProcessResponse) {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const userType = user.type; // ej: "administrador", "profesor", alumno.
     if (dataObject.status === "success") {
       localStorage.setItem("token", dataObject.token ?? "");
       localStorage.setItem("user", JSON.stringify(dataObject.user));
