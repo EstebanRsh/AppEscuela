@@ -13,6 +13,7 @@ function App() {
   const Signup = lazy(() => import("./views/Signup"));
   const UserEdit = lazy(() => import("./views/UserEdit"));
   const PaymentsDashboard = lazy(() => import("./views/PaymentsDashboard"));
+  const PaymentAdd = lazy(() => import("./views/PaymentAdd"));
 
   return (
     <BrowserRouter>
@@ -24,15 +25,15 @@ function App() {
         <Route element={<AdminRoutes />}>
           <Route path="/signup" element={<Signup />} />
           <Route path="/user/edit/:userId" element={<UserEdit />} />
+          <Route path="/payments" element={<PaymentsDashboard />} />
+          <Route path="/payment/add" element={<PaymentAdd />} />
         </Route>
 
         <Route element={<ProtectedRoutes />}>
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/payments" element={<PaymentsDashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />
-            
           </Route>
         </Route>
       </Routes>

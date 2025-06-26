@@ -14,7 +14,7 @@ type Payment = {
 function PaymentsDashboard() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [message, setMessage] = useState<string | null>(null);
-  
+
   const loggedInUser = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = loggedInUser.type === "administrador";
 
@@ -23,21 +23,23 @@ function PaymentsDashboard() {
     const PAYMENTS_URL = "http://localhost:8000/payment/all/detailled";
 
     fetch(PAYMENTS_URL, {
-      headers: { "Authorization": `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
-    .then(res => {
-      if (!res.ok) {
-        return res.json().then(err => { throw new Error(err.message || "Error al cargar los pagos"); });
-      }
-      return res.json();
-    })
-    .then(data => {
-      setPayments(data);
-    })
-    .catch(err => {
-      console.error("Error fetching payments:", err);
-      setMessage(err.message);
-    });
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((err) => {
+            throw new Error(err.message || "Error al cargar los pagos");
+          });
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setPayments(data);
+      })
+      .catch((err) => {
+        console.error("Error fetching payments:", err);
+        setMessage(err.message);
+      });
   };
 
   useEffect(() => {
@@ -48,7 +50,9 @@ function PaymentsDashboard() {
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Gestión de Pagos</h2>
-        {/* Aquí podría ir un botón para "Registrar Nuevo Pago" en el futuro */}
+        <Link to="/payment/add" className="btn btn-success">
+          Registrar Nuevo Pago
+        </Link>
       </div>
 
       {message && <div className="alert alert-danger">{message}</div>}
@@ -75,7 +79,10 @@ function PaymentsDashboard() {
                 <td>{new Date(payment["afecha de pago"]).toLocaleString()}</td>
                 {isAdmin && (
                   <td>
-                    <Link to={`/payment/edit/${payment.id_pago}`} className="btn btn-primary btn-sm">
+                    <Link
+                      to={`/payment/edit/${payment.id_pago}`}
+                      className="btn btn-primary btn-sm"
+                    >
                       Editar
                     </Link>
                   </td>
