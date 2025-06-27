@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import InfoContainer from '../components/common/InfoContainer';
+import InfoContainer from '../../components/common/InfoContainer';
 
 function Signup() {
   const BACKEND_IP = "localhost";
