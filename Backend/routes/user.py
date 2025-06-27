@@ -130,21 +130,33 @@ def login_user(us: InputLogin):
 
 ## Inscribir un alumno a una carrera      
 @user.post("/user/addcareer")
-def addCareer(ins: InputUserAddCareer):
-    try: 
+def addCareer(ins: InputUserAddCareer, authorization: str | None = Header(default=None)):
+    """
+    Inscribe un alumno a una carrera.
+    Solo accesible por administradores.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "Token inválido o no proporcionado."})
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado. Se requiere rol de administrador."})
         newInsc = PivoteUserCareer(ins.id_user, ins.id_career)
-        session.add(newInsc)
-        session.commit()
+        db_session.add(newInsc)
+        db_session.commit()
         res = f"{newInsc.user.userdetail.first_name} {newInsc.user.userdetail.last_name} fue inscripto correctamente a {newInsc.career.name}"
         print(res)
-        return res
+        return JSONResponse(status_code=201, content={"message": res})
+
     except Exception as ex:
-        session.rollback()
+        db_session.rollback()
         print("Error al inscribir al alumno:", ex)
-        import traceback
-        traceback.print_exc()    
+        return JSONResponse(status_code=500, content={"message": "Error interno al procesar la inscripción."})
     finally:
-        session.close()
+        db_session.close()
 
 @user.get("/user/career/{_username}")
 def get_career_user(_username: str):

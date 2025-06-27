@@ -41,3 +41,85 @@ def add_career(ca: InputCareer, authorization: str | None = Header(default=None)
         return JSONResponse(status_code=500, content={"message": "Error interno al añadir la carrera."})
     finally:
         db_session.close()
+@career.get("/career/{career_id}")
+def get_career_by_id(career_id: int, authorization: str | None = Header(default=None)):
+    """
+    Obtiene los datos de una carrera específica por su ID.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "Token inválido."})
+
+    db_session = session
+    try:
+        career_data = db_session.query(Career).filter(Career.id == career_id).first()
+        if not career_data:
+            return JSONResponse(status_code=404, content={"message": "Carrera no encontrada."})
+        return {"id": career_data.id, "name": career_data.name}
+    finally:
+        db_session.close()
+
+
+@career.put("/career/update/{career_id}")
+def update_career(career_id: int, career_update: InputCareer, authorization: str | None = Header(default=None)):
+    """
+    Actualiza el nombre de una carrera.
+    Solo para administradores.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "Token inválido."})
+        
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+
+        career_to_update = db_session.query(Career).filter(Career.id == career_id).first()
+        if not career_to_update:
+            return JSONResponse(status_code=404, content={"message": "Carrera no encontrada."})
+
+        career_to_update.name = career_update.name
+        db_session.commit()
+        return JSONResponse(status_code=200, content={"message": "Carrera actualizada con éxito."})
+    except Exception as e:
+        db_session.rollback()
+        return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
+    finally:
+        db_session.close()
+
+
+@career.delete("/career/delete/{career_id}")
+def delete_career(career_id: int, authorization: str | None = Header(default=None)):
+    """
+    Elimina una carrera.
+    Solo para administradores.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "Token inválido."})
+
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+
+        career_to_delete = db_session.query(Career).filter(Career.id == career_id).first()
+        if not career_to_delete:
+            return JSONResponse(status_code=404, content={"message": "Carrera no encontrada."})
+
+        db_session.delete(career_to_delete)
+        db_session.commit()
+        return JSONResponse(status_code=200, content={"message": "Carrera eliminada con éxito."})
+    except Exception as e:
+        db_session.rollback()
+        # Este error puede ocurrir si un alumno está inscrito en la carrera que intentas borrar.
+        print("Error al eliminar carrera:", e)
+        return JSONResponse(status_code=409, content={"message": f"Error: No se puede eliminar la carrera, es posible que esté en uso."})
+    finally:
+        db_session.close()
