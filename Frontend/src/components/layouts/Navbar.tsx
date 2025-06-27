@@ -126,7 +126,7 @@ const Navbar = () => {
                   style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
                   onClick={closeNavbarCollapse}
                 >
-                  Registrar Usuario
+                  Usuarios
                 </NavLink>
               </li>
             )}
