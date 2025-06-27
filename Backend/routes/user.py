@@ -104,6 +104,7 @@ def login_user(us: InputLogin):
                 # Construimos el objeto de usuario explícitamente para la respuesta
                 user_details = {
                     "id": user.userdetail.id,
+                    "username": user.username,
                     "first_name": user.userdetail.first_name,
                     "last_name": user.userdetail.last_name,
                     "dni": user.userdetail.dni,
