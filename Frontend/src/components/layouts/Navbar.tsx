@@ -74,13 +74,21 @@ const Navbar = () => {
         </button>
 
         {/* Contenido del Navbar que se colapsa */}
-        <div className="collapse navbar-collapse" id="navbarNav" ref={collapseNavbarRef}> {/* Asocia la referencia al div colapsable */}
+        <div
+          className="collapse navbar-collapse"
+          id="navbarNav"
+          ref={collapseNavbarRef}
+        >
+          {" "}
+          {/* Asocia la referencia al div colapsable */}
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li className="nav-item">
               <NavLink
                 className="nav-link"
                 to="/dashboard"
-                style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                style={({ isActive }) =>
+                  isActive ? activeLinkStyle : undefined
+                }
                 onClick={closeNavbarCollapse}
               >
                 Dashboard
@@ -90,7 +98,9 @@ const Navbar = () => {
               <NavLink
                 className="nav-link"
                 to="/profile"
-                style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                style={({ isActive }) =>
+                  isActive ? activeLinkStyle : undefined
+                }
                 onClick={closeNavbarCollapse}
               >
                 Profile
@@ -100,7 +110,9 @@ const Navbar = () => {
               <NavLink
                 className="nav-link"
                 to="/payments"
-                style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                style={({ isActive }) =>
+                  isActive ? activeLinkStyle : undefined
+                }
                 onClick={closeNavbarCollapse}
               >
                 Pagos
@@ -109,8 +121,22 @@ const Navbar = () => {
             <li className="nav-item">
               <NavLink
                 className="nav-link"
+                to="/careers"
+                style={({ isActive }) =>
+                  isActive ? activeLinkStyle : undefined
+                }
+                onClick={closeNavbarCollapse}
+              >
+                Carreras
+              </NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink
+                className="nav-link"
                 to="/notifications"
-                style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                style={({ isActive }) =>
+                  isActive ? activeLinkStyle : undefined
+                }
                 onClick={closeNavbarCollapse}
               >
                 Notifications
@@ -121,7 +147,9 @@ const Navbar = () => {
                 <NavLink
                   className="nav-link"
                   to="/users"
-                  style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
+                  style={({ isActive }) =>
+                    isActive ? activeLinkStyle : undefined
+                  }
                   onClick={closeNavbarCollapse}
                 >
                   Usuarios
