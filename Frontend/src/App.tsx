@@ -12,6 +12,7 @@ function App() {
   const Profile = lazy(() => import("./views/Profile"));
   const Signup = lazy(() => import("./views/Signup"));
   const UserEdit = lazy(() => import("./views/UserEdit"));
+  const UsersDashboard = lazy(() => import("./views/UsersDashboard"));
   const PaymentsDashboard = lazy(() => import("./views/PaymentsDashboard"));
   const PaymentAdd = lazy(() => import("./views/PaymentAdd"));
   const PaymentEdit = lazy(() => import("./views/PaymentEdit"));
@@ -31,6 +32,7 @@ function App() {
             <Route element={<AdminRoutes />}>
               <Route path="/signup" element={<Signup />} />
               <Route path="/user/edit/:userId" element={<UserEdit />} />
+              <Route path="/users" element={<UsersDashboard />} />
               <Route path="/payments" element={<PaymentsDashboard />} />
               <Route path="/payment/add" element={<PaymentAdd />} />
               <Route path="/payment/edit/:paymentId"element={<PaymentEdit />}/></Route>

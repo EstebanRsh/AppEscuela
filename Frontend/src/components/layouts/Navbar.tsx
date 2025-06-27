@@ -116,13 +116,11 @@ const Navbar = () => {
                 Notifications
               </NavLink>
             </li>
-
-            {/* Mostrar "Registrar Usuario" solo si es administrador */}
             {isAdmin && (
               <li className="nav-item">
                 <NavLink
                   className="nav-link"
-                  to="/signup"
+                  to="/users"
                   style={({ isActive }) => (isActive ? activeLinkStyle : undefined)}
                   onClick={closeNavbarCollapse}
                 >

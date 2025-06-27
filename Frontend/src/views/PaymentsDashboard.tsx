@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import InfoContainer from '../components/common/InfoContainer'; 
 
 // Definimos un tipo para la estructura de un pago
 type Payment = {
@@ -47,9 +48,22 @@ function PaymentsDashboard() {
   }, []);
 
   return (
+  <InfoContainer>
     <div className="container mt-4">
+      {/* Sección del título, similar al dashboard */}
+      <h1>
+        <span className="text-warning">Gestión de Pagos</span>
+      </h1>
+      <p className="lead">
+        Aquí puedes ver y administrar todos los registros de pagos.
+      </p>
+      <hr
+        className="my-4"
+        style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
+      />
+
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Gestión de Pagos</h2>
+        {/* Se eliminó el <h2> aquí ya que ahora es parte del h1 anterior */}
         <Link to="/payment/add" className="btn btn-success">
           Registrar Nuevo Pago
         </Link>
@@ -99,7 +113,8 @@ function PaymentsDashboard() {
         </tbody>
       </table>
     </div>
-  );
+  </InfoContainer>
+);
 }
 
 export default PaymentsDashboard;

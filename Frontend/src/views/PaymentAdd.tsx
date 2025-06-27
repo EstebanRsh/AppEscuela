@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import InfoContainer from '../components/common/InfoContainer';
 // Tipos para los datos que cargaremos en los desplegables
 type User = { id: number; username: string; first_name: string; last_name: string; };
 type Career = { id: number; name: string; };
@@ -78,9 +78,22 @@ function PaymentAdd() {
   };
 
   return (
+  <InfoContainer>
     <div className="container mt-4">
+      {/* Sección de título, similar al dashboard */}
+      <h1>
+        <span className="text-warning">Registrar Nuevo Pago</span>
+      </h1>
+      <p className="lead">
+        Completa los siguientes campos para registrar un nuevo pago.
+      </p>
+      <hr
+        className="my-4"
+        style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
+      />
+
       <div className="card p-4 shadow-lg">
-        <h2 className="text-center mb-4">Registrar Nuevo Pago</h2>
+        {/* Se eliminó el <h2> aquí ya que ahora es parte del h1 anterior */}
         <form onSubmit={handleAddPayment}>
           <div className="mb-3">
             <label htmlFor="user" className="form-label">Alumno</label>
@@ -117,7 +130,8 @@ function PaymentAdd() {
         </form>
       </div>
     </div>
-  );
+  </InfoContainer>
+);
 }
 
 export default PaymentAdd;

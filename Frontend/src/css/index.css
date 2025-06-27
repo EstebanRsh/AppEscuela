@@ -7,7 +7,6 @@ body {
   font-family: "Segoe UI", sans-serif;
 }
 
-
 .login-card-custom {
   background-color: rgba(0, 0, 0, 0.7); /* oscuro translúcido */
   color: white;
@@ -23,4 +22,13 @@ body {
 .logout-link:hover .text-danger,
 .logout-link:focus .text-danger {
   filter: brightness(1.2); /* Hace el rojo existente más brillante */
+}
+
+.info-container {
+  background-color: #000000ee;
+  color: white;
+  padding: 1.5rem;
+  border-radius: 0.2rem;
+  margin-top: 0.2rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }

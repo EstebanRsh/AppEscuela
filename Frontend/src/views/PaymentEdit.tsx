@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import InfoContainer from '../components/common/InfoContainer';
 
 // Tipos para los datos que cargaremos
 type User = { id: number; first_name: string; last_name: string };
@@ -130,9 +131,22 @@ function PaymentEdit() {
   }
 
   return (
+  <InfoContainer>
     <div className="container mt-4">
+      {/* Sección del título, similar al dashboard */}
+      <h1>
+        <span className="text-warning">Editando Pago</span>
+      </h1>
+      <p className="lead">
+        Modifica los campos necesarios para actualizar este registro de pago.
+      </p>
+      <hr
+        className="my-4"
+        style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
+      />
+
       <div className="card p-4 shadow-lg">
-        <h2 className="text-center mb-4">Editando Pago</h2>
+        {/* Se eliminó el <h2> aquí ya que ahora es parte del h1 anterior */}
         <form onSubmit={handleUpdatePayment}>
           <div className="mb-3">
             <label htmlFor="id_user" className="form-label">
@@ -218,7 +232,8 @@ function PaymentEdit() {
         </form>
       </div>
     </div>
-  );
+  </InfoContainer>
+);
 }
 
 export default PaymentEdit;
