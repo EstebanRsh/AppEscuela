@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import '../css/cardDetail.css';
 
 function Signup() {
   const BACKEND_IP = "localhost";

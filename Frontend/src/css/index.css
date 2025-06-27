@@ -12,3 +12,15 @@ body {
   background-color: rgba(0, 0, 0, 0.7); /* oscuro translúcido */
   color: white;
 }
+
+/* Nuevo estilo para el enlace de cerrar sesión en hover/focus */
+.logout-link:hover,
+.logout-link:focus {
+  color: #dc3545 !important; /* Rojo de Bootstrap (text-danger) */
+}
+
+/* Opcional: Si quieres que todo el enlace (icono y texto) cambie a un rojo más intenso */
+.logout-link:hover .text-danger,
+.logout-link:focus .text-danger {
+  filter: brightness(1.2); /* Hace el rojo existente más brillante */
+}

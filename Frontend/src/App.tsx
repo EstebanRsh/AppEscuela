@@ -23,19 +23,17 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
         </Route>
-        <Route element={<AdminRoutes />}>
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/user/edit/:userId" element={<UserEdit />} />
-          <Route path="/payments" element={<PaymentsDashboard />} />
-          <Route path="/payment/add" element={<PaymentAdd />} />
-          <Route path="/payment/edit/:paymentId" element={<PaymentEdit />} />
-        </Route>
-
         <Route element={<ProtectedRoutes />}>
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route element={<AdminRoutes />}>
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/user/edit/:userId" element={<UserEdit />} />
+              <Route path="/payments" element={<PaymentsDashboard />} />
+              <Route path="/payment/add" element={<PaymentAdd />} />
+              <Route path="/payment/edit/:paymentId"element={<PaymentEdit />}/></Route>
           </Route>
         </Route>
       </Routes>
