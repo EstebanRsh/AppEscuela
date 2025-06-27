@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
+import InfoContainer from '../components/common/InfoContainer';
 // Definimos el tipo para una Carrera
 type Career = {
   id: number;
@@ -36,10 +36,23 @@ function CareersDashboard() {
     fetchCareers();
   }, []);
 
-  return (
+return (
+  <InfoContainer>
     <div className="container mt-4">
+      {/* Sección del título, similar al dashboard */}
+      <h1>
+        <span className="text-warning">Gestión de Carreras</span>
+      </h1>
+      <p className="lead">
+        Aquí puedes ver y administrar todas las carreras disponibles en el sistema.
+      </p>
+      <hr
+        className="my-4"
+        style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
+      />
+
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Gestión de Carreras</h2>
+        {/* Se eliminó el <h2> aquí ya que ahora es parte del h1 anterior */}
         <Link to="/career/add" className="btn btn-success">
           Añadir Nueva Carrera
         </Link>
@@ -78,7 +91,8 @@ function CareersDashboard() {
         </tbody>
       </table>
     </div>
-  );
+  </InfoContainer>
+);
 }
 
 export default CareersDashboard;

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import InfoContainer from '../components/common/InfoContainer';
 
 function CareerAdd() {
   const navigate = useNavigate();
@@ -41,28 +42,55 @@ function CareerAdd() {
     });
   };
 
-  return (
+return (
+  <InfoContainer>
     <div className="container mt-4">
-      <div className="card p-4 shadow-lg" style={{ maxWidth: '600px', margin: 'auto' }}>
-        <h2 className="text-center mb-4">Añadir Nueva Carrera</h2>
+      {/* Sección del título, similar al dashboard */}
+      <h1>
+        <span className="text-warning">Añadir Nueva Carrera</span>
+      </h1>
+      <p className="lead">
+        Completa el siguiente campo para registrar una nueva carrera.
+      </p>
+      <hr
+        className="my-4"
+        style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
+      />
+
+      <div
+        className="card p-4 shadow-lg"
+        style={{ maxWidth: "600px", margin: "auto" }}
+      >
+        {/* Se eliminó el <h2> aquí ya que ahora es parte del h1 anterior */}
         <form onSubmit={handleAddCareer}>
           <div className="mb-3">
-            <label htmlFor="careerName" className="form-label">Nombre de la Carrera</label>
-            <input 
-              type="text" 
-              id="careerName" 
-              className="form-control" 
-              ref={careerNameRef} 
-              required 
+            <label htmlFor="careerName" className="form-label">
+              Nombre de la Carrera
+            </label>
+            <input
+              type="text"
+              id="careerName"
+              className="form-control"
+              ref={careerNameRef}
+              required
             />
           </div>
-          <button type="submit" className="btn btn-primary">Guardar Carrera</button>
-          <button type="button" className="btn btn-secondary ms-2" onClick={() => navigate('/careers')}>Cancelar</button>
+          <button type="submit" className="btn btn-primary">
+            Guardar Carrera
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary ms-2"
+            onClick={() => navigate("/careers")}
+          >
+            Cancelar
+          </button>
           {message && <div className="alert alert-danger mt-3">{message}</div>}
         </form>
       </div>
     </div>
-  );
+  </InfoContainer>
+);
 }
 
 export default CareerAdd;
