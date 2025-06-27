@@ -1,9 +1,13 @@
 from sqlalchemy.exc import IntegrityError
-from fastapi import APIRouter, Request, Header
+from fastapi import APIRouter, Request, Header, File, UploadFile
 from fastapi.responses import JSONResponse
 from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer, InputUserUpdate
 from sqlalchemy.orm import joinedload
 from auth.security import Security
+import shutil
+import os
+import uuid 
+import traceback
 
 user = APIRouter()
 
@@ -89,6 +93,50 @@ def create_user(us: InputUser, authorization: str | None = Header(default=None))
     # --- FIN DE LA CORRECCIÓN ---
     finally:
         session.close()
+
+@user.post("/user/upload-photo")
+def upload_profile_photo(authorization: str | None = Header(default=None), file: UploadFile = File(...)):
+    """
+    Permite a un usuario logueado subir o cambiar su foto de perfil.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    username = token_data.get("username")
+    if not username:
+        return JSONResponse(status_code=401, content={"message": "Token inválido."})
+
+    db_session = session
+    try:
+        user_to_update = db_session.query(User).options(joinedload(User.userdetail)).filter(User.username == username).first()
+        if not user_to_update:
+            return JSONResponse(status_code=404, content={"message": "Usuario no encontrado."})
+        
+        # Generar un nombre de archivo único para evitar colisiones
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = f"static/profile_pics/{unique_filename}"
+        
+        # Guardar el archivo en el servidor
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Guardar la URL en la base de datos
+        # La URL debe ser accesible desde el frontend
+        image_url = f"/static/profile_pics/{unique_filename}"
+        user_to_update.userdetail.profile_image_url = image_url
+        db_session.commit()
+
+        return JSONResponse(status_code=200, content={"message": "Foto de perfil actualizada con éxito.", "image_url": image_url})
+
+    except Exception as e:
+        db_session.rollback()
+        print("--- OCURRIÓ UN ERROR INTERNO DETALLADO ---")
+        # Esta línea imprimirá el traceback completo en tu consola de uvicorn
+        traceback.print_exc()
+        print("-----------------------------------------")
+        return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
+    finally:
+        db_session.close()
        
 @user.post("/users/login")
 def login_user(us: InputLogin):
@@ -109,7 +157,8 @@ def login_user(us: InputLogin):
                     "last_name": user.userdetail.last_name,
                     "dni": user.userdetail.dni,
                     "type": user.userdetail.type,  # Clave para la lógica del frontend
-                    "email": user.userdetail.email
+                    "email": user.userdetail.email,
+                    "profile_image_url": user.userdetail.profile_image_url
                 }
                 
                 res = {

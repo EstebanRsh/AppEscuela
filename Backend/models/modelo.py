@@ -27,6 +27,7 @@ class UserDetail(Base):
     dni = Column(Integer)
     type = Column(String(50))
     email = Column(String(50), nullable=False, unique=True)
+    profile_image_url = Column(String(255), nullable=True)
 
     def __init__(self, first_name, last_name, dni, type, email):
         self.first_name = first_name
@@ -113,6 +114,7 @@ class InputUserUpdate(BaseModel):
     dni: int
     type: str
     email: str
+
 # endregion
 
 # region configuraciones 

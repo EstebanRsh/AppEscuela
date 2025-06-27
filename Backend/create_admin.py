@@ -1,17 +1,26 @@
-from models.modelo import User, UserDetail, session
+from models.modelo import User, UserDetail, session, Base, engine # <-- Importamos Base y engine
 
 def create_first_admin():
     """
     Script para crear el usuario administrador inicial.
-    Pide los datos por consola.
+    También se asegura de que todas las tablas de la DB existan.
     """
-    print("--- Creación del Usuario Administrador Inicial ---")
+    # --- INICIO DE LA CORRECCIÓN ---
+    # Esta línea crea todas las tablas definidas en tus modelos si no existen.
+    # Es el paso que faltaba.
+    print("Verificando y creando tablas si es necesario...")
+    Base.metadata.create_all(bind=engine)
+    print("¡Tablas listas!")
+    # --- FIN DE LA CORRECCIÓN ---
+
+    print("\n--- Creación del Usuario Administrador Inicial ---")
 
     # Verificamos si ya existe algún administrador para no crear duplicados
     existing_admin = session.query(UserDetail).filter(UserDetail.type == 'administrador').first()
     if existing_admin:
         print(f"Error: Ya existe un administrador en el sistema ({existing_admin.email}).")
         print("No se creará un nuevo usuario.")
+        session.close() # Cerramos la sesión aquí también
         return
 
     # Pedimos los datos por consola
@@ -24,6 +33,7 @@ def create_first_admin():
         dni = int(input("Ingrese el DNI: "))
     except ValueError:
         print("Error: El DNI debe ser un número.")
+        session.close() # Cerramos la sesión aquí también
         return
 
     # Creamos las instancias de los modelos
@@ -34,19 +44,14 @@ def create_first_admin():
             first_name=first_name,
             last_name=last_name,
             dni=dni,
-            type='administrador',  # Forzamos el tipo a 'administrador'
+            type='administrador',
             email=email
         )
-
-        # Asociamos el detalle con el usuario
         new_user.userdetail = new_user_detail
-
-        # Guardamos en la base de datos
         session.add(new_user)
         session.commit()
         
         print("\n¡Éxito! El usuario administrador ha sido creado.")
-        print(f"Username: {username}")
         print("Ya puedes iniciar el servidor y loguearte con esta cuenta.")
 
     except Exception as e:
@@ -59,5 +64,3 @@ def create_first_admin():
 
 if __name__ == "__main__":
     create_first_admin()
-
-# ejecutar en la terminal python create_admin.py

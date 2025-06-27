@@ -5,9 +5,11 @@ from routes.user import user
 from routes.career import career
 from routes.payment import payment
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles 
 
 api_escu = FastAPI()
 
+api_escu.mount("/static", StaticFiles(directory="static"), name="static")
 api_escu.include_router(user)
 api_escu.include_router(career)
 api_escu.include_router(payment)
