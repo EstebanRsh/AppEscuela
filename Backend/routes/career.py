@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Header, JSONResponse
+from fastapi import APIRouter, Header
+from fastapi.responses import JSONResponse
 from models.modelo import Career, InputCareer, session, User
 from auth.security import Security
 

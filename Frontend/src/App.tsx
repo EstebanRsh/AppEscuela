@@ -18,6 +18,7 @@ function App() {
   const PaymentEdit = lazy(() => import("./views/PaymentEdit"));
   const CareersDashboard = lazy(() => import("./views/CareersDashboard"));
   const CareerAdd = lazy(() => import("./views/CareerAdd"))
+  const CareerEdit = lazy(() => import("./views/CareerEdit"));
 
   return (
     <BrowserRouter>
@@ -40,6 +41,7 @@ function App() {
               <Route path="/payment/add" element={<PaymentAdd />} />
               <Route path="/payment/edit/:paymentId"element={<PaymentEdit />}/></Route>
               <Route path="/career/add" element={<CareerAdd />} />
+              <Route path="/career/edit/:careerId" element={<CareerEdit />} />
           </Route>
         </Route>
       </Routes>
