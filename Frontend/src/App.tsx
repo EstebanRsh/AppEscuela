@@ -23,6 +23,7 @@ function App() {
   const CareerAdd = lazy(() => import("./views/admin/CareerAdd"));
   const CareerEdit = lazy(() => import("./views/admin/CareerEdit"));
   // Componentes de Alumno
+  const MyPayments = lazy(() => import("./views/student/MyPayments"));
 
 
   return (
@@ -47,9 +48,10 @@ function App() {
                 <Route path="/payment/edit/:paymentId"element={<PaymentEdit />}/></Route>
                 <Route path="/career/add" element={<CareerAdd />} />
                 <Route path="/career/edit/:careerId" element={<CareerEdit />} />
+                <Route element={<StudentRoutes />}>
+                  <Route path="/my-payments" element={<MyPayments />} />
             </Route>
-            <Route element={<StudentRoutes />}>
-            </Route>
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

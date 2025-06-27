@@ -10,6 +10,7 @@ const Navbar = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userName = user?.first_name || null; // Obtenemos el nombre del usuario
   const isAdmin = user && user.type === "administrador"; // Verificamos si es admin
+  const isStudent = user.type === "alumno";
 
   // Función para cerrar sesión y limpiar localStorage
   const handleLogout = () => {
@@ -82,79 +83,124 @@ const Navbar = () => {
           {" "}
           {/* Asocia la referencia al div colapsable */}
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-            <li className="nav-item">
-              <NavLink
-                className="nav-link"
-                to="/dashboard"
-                style={({ isActive }) =>
-                  isActive ? activeLinkStyle : undefined
-                }
-                onClick={closeNavbarCollapse}
-              >
-                Dashboard
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink
-                className="nav-link"
-                to="/profile"
-                style={({ isActive }) =>
-                  isActive ? activeLinkStyle : undefined
-                }
-                onClick={closeNavbarCollapse}
-              >
-                Profile
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink
-                className="nav-link"
-                to="/payments"
-                style={({ isActive }) =>
-                  isActive ? activeLinkStyle : undefined
-                }
-                onClick={closeNavbarCollapse}
-              >
-                Pagos
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink
-                className="nav-link"
-                to="/careers"
-                style={({ isActive }) =>
-                  isActive ? activeLinkStyle : undefined
-                }
-                onClick={closeNavbarCollapse}
-              >
-                Carreras
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink
-                className="nav-link"
-                to="/notifications"
-                style={({ isActive }) =>
-                  isActive ? activeLinkStyle : undefined
-                }
-                onClick={closeNavbarCollapse}
-              >
-                Notifications
-              </NavLink>
-            </li>
+            {/* Enlaces SOLO para Administradores */}
             {isAdmin && (
-              <li className="nav-item">
-                <NavLink
-                  className="nav-link"
-                  to="/users"
-                  style={({ isActive }) =>
-                    isActive ? activeLinkStyle : undefined
-                  }
-                  onClick={closeNavbarCollapse}
-                >
-                  Usuarios
-                </NavLink>
-              </li>
+              <>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/dashboard"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Dashboard
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/users"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Usuarios
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/payments"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Pagos
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/careers"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Carreras
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/profile"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Profile
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/notifications"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Notifications
+                  </NavLink>
+                </li>
+              </>
+            )}
+
+            {/* Enlaces SOLO para Alumnos */}
+            {isStudent && (
+              <>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/my-payments"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Mis Pagos
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/profile"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Profile
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/notifications"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Notifications
+                  </NavLink>
+                </li>
+              </>
             )}
           </ul>
           <ul className="navbar-nav">
