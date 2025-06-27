@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom"; // Importar Link para el botón
-import InfoContainer from '../components/common/InfoContainer'; 
+import InfoContainer from '../../components/common/InfoContainer';
 
 function Dashboard() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");

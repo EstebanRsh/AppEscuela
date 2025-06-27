@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import InfoContainer from '../components/common/InfoContainer';
+import InfoContainer from '../../components/common/InfoContainer';
 // Tipos para los datos que cargaremos en los desplegables
 type User = { id: number; username: string; first_name: string; last_name: string; };
 type Career = { id: number; name: string; };

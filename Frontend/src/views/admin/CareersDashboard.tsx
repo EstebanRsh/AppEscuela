@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import InfoContainer from '../components/common/InfoContainer';
+import InfoContainer from '../../components/common/InfoContainer';
 // Definimos el tipo para una Carrera
 type Career = {
   id: number;

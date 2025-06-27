@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import InfoContainer from '../components/common/InfoContainer';
+import InfoContainer from '../../components/common/InfoContainer';
 
 // Tipos para los datos que cargaremos
 type User = { id: number; first_name: string; last_name: string };

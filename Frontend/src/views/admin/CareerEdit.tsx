@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import InfoContainer from '../components/common/InfoContainer';
+import InfoContainer from '../../components/common/InfoContainer';
 
 function CareerEdit() {
   const { careerId } = useParams<{ careerId: string }>();
