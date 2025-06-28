@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import InfoContainer from '../../components/common/InfoContainer';
 
@@ -7,143 +7,136 @@ function CareerEdit() {
   const navigate = useNavigate();
 
   const [careerName, setCareerName] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [originalCareerName, setOriginalCareerName] = useState(""); // Para el diálogo de confirmación
+  const [message, setMessage] = useState<{type: 'error' | 'success', text: string} | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // useEffect para cargar el nombre actual de la carrera
   useEffect(() => {
     const token = localStorage.getItem("token") || "";
-    fetch(`http://localhost:8000/career/${careerId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.name) {
-          setCareerName(data.name);
-        } else {
-          setMessage(data.message || "Error al cargar la carrera.");
+    const fetchCareerData = async () => {
+        try {
+            const res = await fetch(`http://localhost:8000/career/${careerId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || "Error al cargar la carrera.");
+            }
+            const data = await res.json();
+            setCareerName(data.name);
+            setOriginalCareerName(data.name);
+        } catch (err: any) {
+            setMessage({ type: 'error', text: err.message });
         }
-      });
+    };
+    fetchCareerData();
   }, [careerId]);
 
-  const handleUpdateCareer = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdateCareer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
+    setMessage(null);
 
     const token = localStorage.getItem("token") || "";
     const UPDATE_URL = `http://localhost:8000/career/update/${careerId}`;
 
-    fetch(UPDATE_URL, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ name: careerName }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.message.includes("éxito")) {
-          alert(data.message);
-          navigate("/careers");
-        } else {
-          setMessage(data.message);
+    try {
+        const res = await fetch(UPDATE_URL, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ name: careerName }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.message || "Error al actualizar.");
         }
-      })
-      .catch((err) => {
-        console.error("Error al actualizar carrera:", err);
-        setMessage("Ocurrió un error en el servidor.");
-      });
+        alert(data.message);
+        navigate("/careers");
+    } catch (err: any) {
+        setMessage({ type: 'error', text: err.message });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
-  const handleDeleteCareer = () => {
-    if (
-      !window.confirm(
-        `¿Estás seguro de que quieres eliminar la carrera "${careerName}"?`
-      )
-    ) {
+  const handleDeleteCareer = async () => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar la carrera "${originalCareerName}"? Esta acción es irreversible.`)) {
       return;
     }
-
+    
+    setIsDeleting(true);
+    setMessage(null);
     const token = localStorage.getItem("token") || "";
     const DELETE_URL = `http://localhost:8000/career/delete/${careerId}`;
 
-    fetch(DELETE_URL, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((response) => {
+    try {
+        const response = await fetch(DELETE_URL, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await response.json();
         if (!response.ok) {
-          return response.json().then((err) => {
-            throw new Error(err.message || "Error al eliminar");
-          });
+            throw new Error(data.message || "Error al eliminar");
         }
-        return response.json();
-      })
-      .then((data) => {
         alert(data.message);
         navigate("/careers");
-      })
-      .catch((error) => {
-        setMessage(`Error: ${error.message}`);
-        console.error("Error al eliminar:", error);
-      });
+    } catch (error: any) {
+        setMessage({ type: 'error', text: error.message });
+    } finally {
+        setIsDeleting(false);
+    }
   };
-  return (
-  <InfoContainer>
-    <div className="container mt-4">
-      {/* Sección del título, similar al dashboard */}
-      <h1>
-        <span className="text-warning">Editando Carrera</span>
-      </h1>
-      <p className="lead">
-        Modifica el nombre de la carrera o elimina el registro existente.
-      </p>
-      <hr
-        className="my-4"
-        style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
-      />
 
-      <div
-        className="card p-4 shadow-lg"
-        style={{ maxWidth: "600px", margin: "auto" }}
-      >
-        {/* Se eliminó el <h2> aquí ya que ahora es parte del h1 anterior */}
-        <form onSubmit={handleUpdateCareer}>
-          <div className="mb-3">
-            <label htmlFor="careerName" className="form-label">
-              Nombre de la Carrera
-            </label>
-            <input
-              type="text"
-              id="careerName"
-              className="form-control"
-              value={careerName}
-              onChange={(e) => setCareerName(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-success">
-            Actualizar Carrera
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger ms-2"
-            onClick={handleDeleteCareer}
-          >
-            Eliminar Carrera
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary ms-2"
-            onClick={() => navigate("/careers")}
-          >
-            Cancelar
-          </button>
-          {message && <div className="alert alert-danger mt-3">{message}</div>}
-        </form>
-      </div>
-    </div>
-  </InfoContainer>
-);
+  return (
+    <InfoContainer>
+        <div className="container mt-4">
+            <div className="card card-custom shadow-lg mx-auto" style={{ maxWidth: '700px' }}>
+                <div className="card-header">
+                    <h1 className="m-0 h3">
+                        <i className="bi bi-pencil-fill text-warning me-2"></i>
+                        Editando Carrera
+                    </h1>
+                </div>
+                <div className="card-body p-4">
+                    <p className="lead mb-4">
+                        Modifica el nombre de la carrera o elimínala del sistema.
+                    </p>
+                    <form onSubmit={handleUpdateCareer}>
+                        <div className="mb-3">
+                            <label htmlFor="careerName" className="form-label">Nombre de la Carrera</label>
+                            <input
+                                type="text"
+                                id="careerName"
+                                className="form-control"
+                                value={careerName}
+                                onChange={(e) => setCareerName(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        {message && <div className={`alert mt-3 ${message.type === 'error' ? 'alert-danger' : 'alert-success'}`}>{message.text}</div>}
+
+                        <div className="d-flex justify-content-between mt-4">
+                            <button type="button" className="btn btn-outline-danger" onClick={handleDeleteCareer} disabled={isDeleting}>
+                                {isDeleting ? <span className="spinner-border spinner-border-sm"></span> : <><i className="bi bi-trash-fill me-2"></i>Eliminar</>}
+                            </button>
+                            <div>
+                                <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate('/careers')}>
+                                    Cancelar
+                                </button>
+                                <button type="submit" className="btn btn-outline-success" disabled={isLoading}>
+                                    {isLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : ''}
+                                    Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </InfoContainer>
+  );
 }
 
 export default CareerEdit;

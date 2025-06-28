@@ -1,15 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-// La interfaz no cambia
-interface UserDetails {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  type: string;
-  dni: number;
-}
+import InfoContainer from '../../components/common/InfoContainer';
 
 function UserEdit() {
   const { userId } = useParams<{ userId: string }>();
@@ -20,68 +11,35 @@ function UserEdit() {
     last_name: '',
     email: '',
     type: 'alumno',
-    dni: 0,
+    dni: '',
   });
 
-const handleDelete = () => {
-    // Usamos el nombre del usuario del formulario para un mensaje más amigable
-    if (!window.confirm(`¿Estás seguro de que quieres eliminar a ${formData.first_name}? Esta acción no se puede deshacer.`)) {
-      return;
-    }
+  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-    const token = localStorage.getItem("token") || "";
-    const DELETE_URL = `http://localhost:8000/user/delete/${userId}`;
 
-    fetch(DELETE_URL, {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    .then(response => {
-      if (!response.ok) {
-        return response.json().then(err => { throw new Error(err.message || 'Error al eliminar'); });
-      }
-      return response.json();
-    })
-    .then(data => {
-      alert(data.message); // Mostramos el éxito
-      navigate('/dashboard'); // Y redirigimos al dashboard
-    })
-    .catch(error => {
-      setMessage(`Error: ${error.message}`); // Mostramos el error en la misma página de edición
-      console.error("Error al eliminar:", error);
-    });
-  };
-
-  const [message, setMessage] = useState<string | null>(null);
-
-  // useEffect para cargar los datos iniciales
   useEffect(() => {
     const token = localStorage.getItem("token") || "";
     const FETCH_USER_URL = `http://localhost:8000/user/${userId}`;
 
-    fetch(FETCH_USER_URL, { headers: { "Authorization": `Bearer ${token}` } })
-      .then(res => {
-        if (!res.ok) {
-           return res.json().then(errorInfo => { throw new Error(errorInfo.message || "Error"); });
+    const fetchUserData = async () => {
+        try {
+            const res = await fetch(FETCH_USER_URL, { headers: { "Authorization": `Bearer ${token}` } });
+            if (!res.ok) {
+                const errorInfo = await res.json();
+                throw new Error(errorInfo.message || "Error al cargar el usuario.");
+            }
+            const data = await res.json();
+            setFormData({ ...data, dni: String(data.dni) }); // Guardamos el DNI como string para el input
+        } catch (err: any) {
+            setMessage({ type: 'error', text: err.message });
         }
-        return res.json();
-      })
-      .then((data: UserDetails) => {
-        // 2. Cuando los datos llegan, actualizamos el estado del formulario.
-        setFormData({
-            first_name: data.first_name,
-            last_name: data.last_name,
-            email: data.email,
-            type: data.type,
-            dni: data.dni
-        });
-      })
-      .catch(err => {
-        setMessage(`Error al cargar el usuario: ${err.message}`);
-      });
+    };
+
+    fetchUserData();
   }, [userId]);
 
-  // 3. Función que actualiza el estado cada vez que se escribe en un input.
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
     setFormData(prevData => ({
@@ -90,92 +48,131 @@ const handleDelete = () => {
     }));
   };
   
-  const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
     setMessage(null);
-
-    // 4. Los datos a enviar ya están listos en nuestro estado 'formData'.
-    const updatedData = {
-        ...formData,
-        dni: parseInt(String(formData.dni), 10) // Aseguramos que el DNI sea un número
-    };
 
     const token = localStorage.getItem("token") || "";
     const UPDATE_URL = `http://localhost:8000/user/update/${userId}`;
 
-    const requestOptions = {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(updatedData),
-    };
+    try {
+        const response = await fetch(UPDATE_URL, {
+            method: "PUT",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ ...formData, dni: parseInt(formData.dni, 10) }),
+        });
 
-    fetch(UPDATE_URL, requestOptions)
-      .then(response => {
+        const result = await response.json();
         if (!response.ok) {
-          return response.json().then(errorInfo => { throw new Error(errorInfo.message); });
+            throw new Error(result.message || 'Error al actualizar.');
         }
-        return response.json();
-      })
-      .then(data => {
-        alert(data.message);
-        navigate('/dashboard');
-      })
-      .catch(error => {
-        setMessage(error.message);
-      });
+
+        alert(result.message); // Usamos un alert para el éxito y redirigimos
+        navigate('/users'); // Volvemos a la lista de usuarios
+
+    } catch (error: any) {
+        setMessage({ type: 'error', text: error.message });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`¿Estás seguro de que quieres eliminar a ${formData.first_name}? Esta acción es irreversible.`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setMessage(null);
+    const token = localStorage.getItem("token") || "";
+    const DELETE_URL = `http://localhost:8000/user/delete/${userId}`;
+
+    try {
+        const response = await fetch(DELETE_URL, {
+            method: 'GET', // o 'DELETE' si tu API lo soporta así
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.message || 'Error al eliminar');
+        }
+
+        alert(result.message);
+        navigate('/users'); // Redirigimos al dashboard de usuarios
+
+    } catch (error: any) {
+        setMessage({ type: 'error', text: error.message });
+    } finally {
+        setIsDeleting(false);
+    }
   };
 
   return (
-    <div className="container mt-4">
-      <div className="card p-4 shadow-lg">
-        {/* Usamos el estado para el título */}
-        <h2 className="text-center mb-4">Editando a {formData.first_name} {formData.last_name}</h2>
-        <form onSubmit={handleUpdate}>
-          {/* 5. Los inputs ahora son 'controlados'. Usan 'value' y 'onChange'. */}
-          <div className="row">
-            <div className="col-md-6 mb-3">
-              <label htmlFor="first_name">Nombre</label>
-              <input type="text" id="first_name" className="form-control" value={formData.first_name} onChange={handleInputChange} required />
+    <InfoContainer>
+        <div className="container mt-4">
+            <div className="card card-custom shadow-lg mx-auto" style={{ maxWidth: '800px' }}>
+                <div className="card-header">
+                    <h1 className="m-0 h3">
+                        <i className="bi bi-pencil-square text-warning me-2"></i>
+                        Editando Perfil de Usuario
+                    </h1>
+                </div>
+                <div className="card-body p-4">
+                    <h2 className="lead fs-4 mb-4">
+                        Modificando datos de: <span className="fw-bold">{formData.first_name} {formData.last_name}</span>
+                    </h2>
+                    <form onSubmit={handleUpdate} noValidate>
+                        <div className="row g-3">
+                            <div className="col-md-6">
+                                <label htmlFor="first_name">Nombre</label>
+                                <input type="text" id="first_name" className="form-control" value={formData.first_name} onChange={handleInputChange} required />
+                            </div>
+                            <div className="col-md-6">
+                                <label htmlFor="last_name">Apellido</label>
+                                <input type="text" id="last_name" className="form-control" value={formData.last_name} onChange={handleInputChange} required />
+                            </div>
+                            <div className="col-md-6">
+                              <label htmlFor="dni">DNI</label>
+                              <input type="number" id="dni" className="form-control" value={formData.dni} onChange={handleInputChange} required />
+                            </div>
+                            <div className="col-md-6">
+                              <label htmlFor="email">Email</label>
+                              <input type="email" id="email" className="form-control" value={formData.email} onChange={handleInputChange} required />
+                            </div>
+                            <div className="col-12">
+                                <label htmlFor="type">Tipo de Usuario</label>
+                                <select id="type" className="form-select" value={formData.type} onChange={handleInputChange}>
+                                <option value="alumno">Alumno</option>
+                                <option value="profesor">Profesor</option>
+                                <option value="administrador">Administrador</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {message && <div className={`alert mt-4 ${message.type === 'success' ? 'alert-success' : 'alert-danger'}`}>{message.text}</div>}
+
+                        <div className="d-flex justify-content-between mt-4">
+                            <button type="button" className="btn btn-outline-danger" onClick={handleDelete} disabled={isDeleting}>
+                                {isDeleting ? <span className="spinner-border spinner-border-sm"></span> : <><i className="bi bi-trash-fill me-2"></i>Eliminar</>}
+                            </button>
+                            <div>
+                                <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate(-1)}>Cancelar</button>
+                                <button type="submit" className="btn btn-outline-success" disabled={isLoading}>
+                                    {isLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : ''}
+                                    Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div className="col-md-6 mb-3">
-              <label htmlFor="last_name">Apellido</label>
-              <input type="text" id="last_name" className="form-control" value={formData.last_name} onChange={handleInputChange} required />
-            </div>
-          </div>
-          <div className="row">
-             <div className="col-md-6 mb-3">
-              <label htmlFor="dni">DNI</label>
-              <input type="number" id="dni" className="form-control" value={formData.dni} onChange={handleInputChange} required />
-            </div>
-            <div className="col-md-6 mb-3">
-              <label htmlFor="email">Email</label>
-              <input type="email" id="email" className="form-control" value={formData.email} onChange={handleInputChange} required />
-            </div>
-          </div>
-          <div className="mb-3">
-            <label htmlFor="type">Tipo de Usuario</label>
-            <select id="type" className="form-select" value={formData.type} onChange={handleInputChange}>
-              <option value="alumno">Alumno</option>
-              <option value="profesor">Profesor</option>
-              <option value="administrador">Administrador</option>
-            </select>
-          </div>
-          <button type="submit" className="btn btn-success">Actualizar Usuario</button>
-          <button 
-              type="button" 
-              className="btn btn-danger ms-2"
-              onClick={handleDelete}
-            >
-              Eliminar Usuario
-            </button>
-          <button type="button" className="btn btn-secondary ms-2" onClick={() => navigate('/dashboard')}>Cancelar</button>
-          {message && <div className="alert alert-danger mt-3">{message}</div>}
-        </form>
-      </div>
-    </div>
+        </div>
+    </InfoContainer>
   );
 }
 

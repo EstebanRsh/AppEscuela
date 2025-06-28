@@ -1,35 +1,259 @@
+/* ==========================================================================
+   1. ESTILOS BASE Y GENERALES
+   ========================================================================== */
+
 body {
-  background-image: url("/Fondo.png");
+  background-image: url("/FondoRealista.jpg");
   background-size: cover;
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: center;
   font-family: "Segoe UI", sans-serif;
-}
-
-.login-card-custom {
-  background-color: rgba(0, 0, 0, 0.7); /* oscuro translúcido */
   color: white;
-}
-
-/* Nuevo estilo para el enlace de cerrar sesión en hover/focus */
-.logout-link:hover,
-.logout-link:focus {
-  color: #dc3545 !important; /* Rojo de Bootstrap (text-danger) */
-}
-
-/* Opcional: Si quieres que todo el enlace (icono y texto) cambie a un rojo más intenso */
-.logout-link:hover .text-danger,
-.logout-link:focus .text-danger {
-  filter: brightness(1.2); /* Hace el rojo existente más brillante */
 }
 
 .info-container {
-  background-color: #000000ee;
-  color: white;
+  background-color: rgba(0, 0, 0, 0.85);
   padding: 1.5rem;
   border-radius: 0.2rem;
   margin-top: 0.2rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   min-height: 100vh;
+}
+
+.hr-custom {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================================
+   2. ESTILOS PARA COMPONENTES ESPECÍFICOS
+   ========================================================================== */
+
+/* --- Tarjetas Personalizadas --- */
+.card-custom {
+  background-color: rgba(22, 22, 22, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.card-custom .card-header {
+  background-color: rgba(33, 37, 41, 0.7);
+  border-bottom: 1px solid rgba(255, 193, 7, 0.5);
+}
+
+/* --- Tarjetas del Dashboard --- */
+.dashboard-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border-color: rgba(255, 193, 7, 0.2);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 0.5rem 1.5rem rgba(255, 193, 7, 0.15);
+  cursor: pointer;
+  border-color: rgba(255, 193, 7, 0.5);
+}
+
+.bg-dark-transparent {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* --- Tablas y Estados Vacíos --- */
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.1);
+  --bs-table-color: white;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.table thead {
+  background-color: rgba(33, 37, 41, 0.8) !important;
+}
+
+.table-hover > tbody > tr:hover > * {
+  --bs-table-accent-bg: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+.empty-state .bi {
+  font-size: 3rem;
+}
+
+/* --- Menú de Perfil en Navbar (Escritorio) --- */
+.nav-item-profile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid rgba(255, 193, 7, 0.7);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
+
+.profile-dropdown-menu-navbar {
+  position: absolute;
+  top: calc(100% + 15px);
+  right: 0;
+  width: 280px;
+  background-color: #2c3034;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.5);
+  z-index: 1021;
+  color: white;
+  animation: fadeInNavbar 0.2s ease-out;
+}
+
+.profile-dropdown-avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px solid #ffc107;
+}
+
+.dropdown-item-custom {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: white;
+  text-decoration: none;
+}
+
+.dropdown-item-custom:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffc107;
+}
+
+.dropdown-divider-custom {
+  height: 1px;
+  margin: 0.5rem 0;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+@keyframes fadeInNavbar {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ==========================================================================
+   3. ESTILOS RESPONSIVOS (PARA MÓVILES)
+   ========================================================================== */
+
+/* --- Tablas en Móvil (se convierten en tarjetas) --- */
+@media (max-width: 767.98px) {
+  .table-responsive-cards thead {
+    border: none;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  }
+
+  .table-responsive-cards tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    border-radius: 0.375rem;
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  .table-responsive-cards td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: right;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem;
+  }
+  
+  .table-responsive-cards tr td:last-child {
+    border-bottom: 0;
+  }
+
+  .table-responsive-cards td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #ffc107;
+    text-align: left;
+    margin-right: 1rem;
+  }
+
+  .table-responsive-cards td.actions-cell {
+    justify-content: center;
+  }
+
+  .table-responsive-cards td.actions-cell::before {
+    display: none;
+  }
+}
+
+/* --- Vista de Perfil en Móvil (pantalla completa) --- */
+.mobile-profile-view {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #212529;
+  color: white;
+  z-index: 2000;
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-profile-view.active {
+  transform: translateX(0);
+}
+
+.mobile-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #343a40;
+  flex-shrink: 0;
+}
+
+.mobile-profile-content {
+  flex-grow: 1;
+  padding: 2rem 1rem;
+  text-align: center;
+  overflow-y: auto;
+}
+
+/* --- Ajustes al Navbar en Móvil --- */
+@media (max-width: 991.98px) {
+  .nav-item-profile {
+    margin: 0.5rem 0;
+  }
+  .profile-dropdown-menu-navbar {
+    right: 15px; 
+    left: auto;
+  }
 }

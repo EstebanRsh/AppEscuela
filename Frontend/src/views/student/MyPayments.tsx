@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import InfoContainer from "../../components/common/InfoContainer";
+
+// Definimos el tipo para la estructura de un pago de estudiante
 type StudentPayment = {
   id: number;
   amount: number;
@@ -11,114 +13,135 @@ type StudentPayment = {
 function MyPayments() {
   const [payments, setPayments] = useState<StudentPayment[]>([]);
   const [message, setMessage] = useState<string | null>(null);
-  // Añadimos un estado para saber si estamos cargando los datos
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const userString = localStorage.getItem("user");
-    const user = userString ? JSON.parse(userString) : null;
-    const token = localStorage.getItem("token");
+    const fetchMyPayments = async () => {
+      setIsLoading(true);
+      setMessage(null);
+      const userString = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
 
-    if (!user || !user.username || !token) {
-      setMessage(
-        "No se pudo verificar la sesión. Por favor, inicie sesión de nuevo."
-      );
-      setIsLoading(false); // Dejamos de cargar
-      return;
-    }
+      if (!userString || !token) {
+        setMessage("No se pudo verificar la sesión. Por favor, inicie sesión de nuevo.");
+        setIsLoading(false);
+        return;
+      }
+      
+      const user = JSON.parse(userString);
+      const FETCH_URL = `http://localhost:8000/payment/user/${user.username}`;
 
-    const FETCH_URL = `http://localhost:8000/payment/user/${user.username}`;
-
-    fetch(FETCH_URL, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => {
+      try {
+        const res = await fetch(FETCH_URL, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) {
-          return res.json().then((err) => {
-            throw new Error(err.message || "Error del servidor.");
-          });
+          const err = await res.json();
+          throw new Error(err.message || "Error del servidor.");
         }
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res.json();
+        // Ordenamos los pagos del más reciente al más antiguo
         const sortedPayments = data.sort(
           (a: StudentPayment, b: StudentPayment) =>
             new Date(b.fecha_pago).getTime() - new Date(a.fecha_pago).getTime()
         );
         setPayments(sortedPayments);
-      })
-      .catch((err) => {
-        console.error("Error fetching payments:", err);
+
+      } catch (err: any) {
+        console.error("Error fetching my payments:", err);
         setMessage(err.message);
-      })
-      .finally(() => {
-        // Esta línea se ejecuta siempre, haya éxito o error
+      } finally {
         setIsLoading(false);
-      });
+      }
+    };
+
+    fetchMyPayments();
   }, []);
 
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' });
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("es-ES", {
+      year: 'numeric', month: 'long', day: 'numeric',
+    });
+  };
+
+  const formatMonth = (dateString: string) => {
+    const date = new Date(dateString);
+    // Sumamos 1 día para evitar problemas de zona horaria que puedan mostrar el mes anterior
+    date.setDate(date.getDate() + 1);
+    return date.toLocaleDateString("es-ES", {
+        year: 'numeric', month: 'long',
+    });
+};
+
   return (
-    <InfoContainer>
-      <div className="container mt-4">
-        {/* Sección del título principal, similar al dashboard */}
-        <h1>
-          <span className="text-warning">Mi Historial de Pagos</span>
-        </h1>
-        <p className="lead">
-          Aquí puedes ver todos los pagos que has realizado, ordenados del más
-          reciente al más antiguo.
-        </p>
-        <hr
-          className="my-4"
-          style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
-        />
+  <InfoContainer>
+    <div className="container mt-4">
+      <div className="card card-custom shadow-lg">
+        <div className="card-header">
+          <h1 className="m-0 h3">
+            <i className="bi bi-wallet2 text-warning me-2"></i>
+            Mi Historial de Pagos
+          </h1>
+        </div>
+        <div className="card-body">
+          <p className="lead mb-4">
+            Aquí puedes ver todos los pagos que has realizado, ordenados del más reciente al más antiguo.
+          </p>
 
-        {/* Si hay un error, lo mostramos */}
-        {message && <div className="alert alert-danger">{message}</div>}
+          {message && <div className="alert alert-danger">{message}</div>}
 
-        {/* Mientras carga, mostramos un mensaje */}
-        {isLoading ? (
-          <p>Cargando pagos...</p>
-        ) : (
-          // Cuando termina de cargar, mostramos la tabla
-          <table className="table table-striped table-hover">
-            <thead className="table-dark">
-              <tr>
-                <th>CARRERA</th>
-                <th>MONTO</th>
-                <th>MES DEL PAGO</th>
-                <th>FECHA DE REALIZACIÓN</th>
-              </tr>
-            </thead>
-            <tbody>
-              {payments.length > 0 ? (
-                payments.map((payment) => (
-                  <tr key={payment.id}>
-                    <td>{payment.carrera}</td>
-                    <td>${payment.amount}</td>
-                    <td>
-                      {new Date(payment.mes_afectado).toLocaleDateString(
-                        "es-ES",
-                        { year: "numeric", month: "long" }
-                      )}
-                    </td>
-                    <td>
-                      {new Date(payment.fecha_pago).toLocaleString("es-ES")}
-                    </td>
+          {isLoading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-warning" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+              <p className="mt-2">Cargando tu historial...</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              {/* Se añade la clase 'table-responsive-cards' */}
+              <table className="table table-hover align-middle table-responsive-cards">
+                <thead>
+                  <tr>
+                    <th>CARRERA</th>
+                    <th>MES CORRESPONDIENTE</th>
+                    <th>FECHA DE PAGO</th>
+                    <th className="text-end">MONTO</th>
                   </tr>
-                ))
-              ) : (
-                // Este mensaje solo se muestra si NO estamos cargando y NO hay pagos
-                <tr>
-                  <td colSpan={4} className="text-center">
-                    Aún no has realizado ningún pago.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
+                </thead>
+                <tbody>
+                  {payments.length > 0 ? (
+                    payments.map((payment) => (
+                      <tr key={payment.id}>
+                        {/* Se añaden los 'data-label' */}
+                        <td data-label="Carrera">{payment.carrera}</td>
+                        <td data-label="Mes Correspondiente">{formatMonth(payment.mes_afectado)}</td>
+                        <td data-label="Fecha de Pago">{formatDate(payment.fecha_pago)}</td>
+                        <td data-label="Monto" className="text-end fw-bold">{formatCurrency(payment.amount)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4}>
+                        <div className="empty-state">
+                          <i className="bi bi-emoji-frown"></i>
+                          <h4 className="mt-3">Aún no tienes pagos</h4>
+                          <p>Cuando realices tu primer pago, lo verás reflejado aquí.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </InfoContainer>
-  );
+    </div>
+  </InfoContainer>
+);
 }
 
 export default MyPayments;

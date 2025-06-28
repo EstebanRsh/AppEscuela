@@ -1,126 +1,146 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom"; // Importar Link para el botón
+import { Link } from "react-router-dom";
 import InfoContainer from '../../components/common/InfoContainer';
 
-function Dashboard() {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const isAdmin = user.type === "administrador"; // Verificamos si es admin
+// Se define un tipo más específico para el usuario
+type User = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  type: string;
+  email: string;
+};
 
-  const BACKEND_IP = "localhost";
-  const BACKEND_PORT = "8000";
-  const ENDPOINT = "users/all";
-  const USERS_URL = `http://${BACKEND_IP}:${BACKEND_PORT}/${ENDPOINT}`;
+function UsersDashboard() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  type User = { id: number; [key: string]: any };
-  const [data, setData] = useState<User[]>([]);
+  const loggedInUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = loggedInUser.type === "administrador";
 
-  function mostrar_datos(data: any) {
-    if (data && !data.message) {
-      setData(data);
-    } else {
-      setData([]);
-      console.error("Error al cargar usuarios:", data.message);
-    }
-  }
-
-  function get_users_all() {
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    setMessage(null);
     const token = localStorage.getItem("token") || "";
+    const USERS_URL = "http://localhost:8000/users/all";
 
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", `Bearer ${token}`);
-    myHeaders.append("Content-Type", "application/json");
+    try {
+      const response = await fetch(USERS_URL, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    const requestOptions = {
-      method: "GET",
-      headers: myHeaders,
-    };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Error al cargar los usuarios.");
+      }
 
-    fetch(USERS_URL, requestOptions)
-      .then((respond) => respond.json())
-      .then((data) => mostrar_datos(data))
-      .catch((error) => console.log("error", error));
-  }
+      const data = await response.json();
+      setUsers(data);
+
+    } catch (error: any) {
+      console.error("Error fetching users:", error);
+      setMessage(error.message);
+      setUsers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    get_users_all();
+    fetchUsers();
   }, []);
 
-return (
+  return (
   <InfoContainer>
     <div className="container mt-4">
-      {/* Sección del título principal, similar al dashboard */}
-      <h1>
-        <span className="text-warning">Gestión de Usuarios</span>
-      </h1>
-      <p className="lead">
-        Desde aquí puedes ver la lista de usuarios y administrarlos.
-      </p>
-      <hr
-        className="my-4"
-        style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
-      />
+      <div className="card card-custom shadow-lg">
+        <div className="card-header d-flex justify-content-between align-items-center">
+          <h1 className="m-0 h3">
+            <i className="bi bi-people-fill text-warning me-2"></i>
+            Gestión de Usuarios
+          </h1>
+          {isAdmin && (
+            <Link to="/signup" className="btn btn-outline-success d-flex align-items-center">
+              <i className="bi bi-person-plus-fill me-2"></i>
+              Registrar Usuario
+            </Link>
+          )}
+        </div>
+        <div className="card-body">
+          <p className="lead mb-4">
+            Desde aquí puedes ver la lista de usuarios y editar sus perfiles.
+          </p>
 
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        {/* Se eliminó el <h2> "Dashboard" y el "Bienvenido" que ahora están en el h1/p.lead */}
-        {isAdmin && (
-          <Link to="/signup" className="btn btn-outline-light">
-            Registrar Nuevo Usuario
-          </Link>
-        )}
-      </div>
+          {/* El mensaje de error y el spinner de carga se mantienen igual */}
+          {message && <div className="alert alert-danger">{message}</div>}
 
-      {/* El título de la tabla se convierte en h4 o se integra en la descripción si es más apropiado */}
-      <h4>Lista de Usuarios</h4>
-      <div className="table-responsive">
-        <table className="table table-dark table-hover">
-          <thead className="thead-dark">
-            <tr>
-              <th>NOMBRE</th>
-              <th>APELLIDO</th>
-              <th>TIPO</th>
-              <th>EMAIL</th>
-              {isAdmin && <th>ACCIONES</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {data.length > 0 ? (
-              data.map((user_item) => (
-                <tr key={user_item.id}>
-                  <td>{user_item.first_name}</td>
-                  <td>{user_item.last_name}</td>
-                  <td>{user_item.type}</td>
-                  <td>{user_item.email}</td>
-                  {isAdmin && (
-                    <td>
-                      <Link
-                        to={`/user/edit/${user_item.id}`}
-                        className="btn btn-light btn-sm me-2"
-                      >
-                        Editar
-                      </Link>
-                    </td>
+          {isLoading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-warning" role="status">
+                <span className="visually-hidden">Cargando...</span>
+              </div>
+              <p className="mt-2">Cargando usuarios...</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              {/* PASO 1: Asegúrate que esta clase esté en la tabla */}
+              <table className="table table-hover align-middle table-responsive-cards">
+                <thead>
+                  <tr>
+                    <th>NOMBRE</th>
+                    <th>APELLIDO</th>
+                    <th>TIPO</th>
+                    <th>EMAIL</th>
+                    {isAdmin && <th className="text-end">ACCIONES</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.length > 0 ? (
+                    users.map((user_item) => (
+                      <tr key={user_item.id}>
+                        {/* PASO 2: Añade el 'data-label' a cada celda */}
+                        <td data-label="Nombre">{user_item.first_name}</td>
+                        <td data-label="Apellido">{user_item.last_name}</td>
+                        <td data-label="Tipo">{user_item.type}</td>
+                        <td data-label="Email">{user_item.email}</td>
+                        {isAdmin && (
+                          <td data-label="Acciones" className="text-end actions-cell">
+                            <Link
+                              to={`/user/edit/${user_item.id}`}
+                              className="btn btn-outline-primary btn-sm"
+                            >
+                              <i className="bi bi-pencil-square me-1"></i>
+                              Editar
+                            </Link>
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={isAdmin ? 5 : 4}>
+                        <div className="empty-state">
+                          <i className="bi bi-person-x-fill"></i>
+                          <h4 className="mt-3">No se encontraron usuarios</h4>
+                          <p>Aún no hay usuarios registrados en el sistema.</p>
+                        </div>
+                      </td>
+                    </tr>
                   )}
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={isAdmin ? 5 : 4} className="text-center py-4">
-                  No hay usuarios para mostrar.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div>
-        <button onClick={get_users_all} className="btn btn-secondary mt-3">
-          Recargar datos
-        </button>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   </InfoContainer>
 );
 }
 
-export default Dashboard;
+// Corregí el nombre de la exportación para que coincida con el propósito del archivo.
+export default UsersDashboard;

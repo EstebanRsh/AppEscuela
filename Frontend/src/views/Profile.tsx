@@ -1,253 +1,247 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import InfoContainer from "../components/common/InfoContainer";
 
-function Profile() {
-  // Estado para el usuario, se inicializa desde localStorage
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user") || "{}")
-  );
+// Definición de tipos para los datos que vamos a manejar
+type UserInfo = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  type: 'administrador' | 'alumno' | 'profesor';
+  profile_image_url: string;
+  username: string;
+};
 
-  // Estado para la VISTA PREVIA de la imagen nueva
+type UserCareer = {
+    usuario: string;
+    carrera: string;
+};
+
+function Profile() {
+  const [user, setUser] = useState<UserInfo>(JSON.parse(localStorage.getItem("user") || "{}"));
+  const [userCareers, setUserCareers] = useState<UserCareer[]>([]);
+  const [isDetailsVisible, setIsDetailsVisible] = useState(true);
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  
-  // Estado para GUARDAR el archivo de imagen seleccionado
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
-  // Estado para mostrar mensajes de error o éxito
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [passwordMessage, setPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
-  // Estados para controlar el formulario de cambio de contraseña
+  const [isLoading, setIsLoading] = useState({ photo: false, password: false, careers: true });
   const [isEditingPassword, setIsEditingPassword] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
-  
-  // Función para manejar el envío del formulario
-  const handlePasswordChange = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setPasswordMessage(null); // Limpiamos mensajes anteriores
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    confirm_new_password: ''
+  });
 
-    // Validación del frontend
-    if (newPassword !== confirmNewPassword) {
-      setPasswordMessage("Las nuevas contraseñas no coinciden.");
-      return;
+  useEffect(() => {
+    if (user.type === 'alumno' && user.username) {
+        const fetchUserCareers = async () => {
+            setIsLoading(prev => ({...prev, careers: true}));
+            const token = localStorage.getItem("token") || "";
+            try {
+                const res = await fetch(`http://localhost:8000/user/career/${user.username}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error("No se pudieron cargar las carreras.");
+                const data = await res.json();
+                setUserCareers(data);
+            } catch (err) {
+                console.error("Error fetching user careers:", err);
+            } finally {
+                setIsLoading(prev => ({...prev, careers: false}));
+            }
+        };
+        fetchUserCareers();
     }
-    if (!newPassword || newPassword.length < 4) {
-      setPasswordMessage("La nueva contraseña debe tener al menos 4 caracteres.");
-      return;
-    }
+  }, [user.username, user.type]);
 
-    const token = localStorage.getItem("token") || "";
-    const CHANGE_PASS_URL = "http://localhost:8000/user/change-password/self";
-
-    fetch(CHANGE_PASS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        current_password: currentPassword,
-        new_password: newPassword
-      })
-    })
-    .then(res => {
-      if (!res.ok) {
-        return res.json().then(err => { throw new Error(err.message || "Error en el servidor"); });
-      }
-      return res.json();
-    })
-    .then(data => {
-      alert(data.message); // Mostramos un alert de éxito
-      // Limpiamos y ocultamos el formulario
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmNewPassword('');
-      setIsEditingPassword(false);
-    })
-    .catch((err: any) => {
-      setPasswordMessage(err.message);
-    });
+  const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setPasswordData(prev => ({...prev, [id]: value}));
   };
-  // Se ejecuta cuando el usuario elige un archivo
+
+  const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setPasswordMessage(null);
+
+    if (passwordData.new_password !== passwordData.confirm_new_password) {
+      setPasswordMessage({ type: 'error', text: "Las nuevas contraseñas no coinciden." });
+      return;
+    }
+    if (!passwordData.new_password || passwordData.new_password.length < 4) {
+      setPasswordMessage({ type: 'error', text: "La nueva contraseña debe tener al menos 4 caracteres." });
+      return;
+    }
+
+    setIsLoading(prev => ({ ...prev, password: true }));
+    const token = localStorage.getItem("token") || "";
+    
+    try {
+      const res = await fetch("http://localhost:8000/user/change-password/self", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+            current_password: passwordData.current_password,
+            new_password: passwordData.new_password
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Error en el servidor");
+      }
+      alert(data.message);
+      setPasswordData({ current_password: '', new_password: '', confirm_new_password: '' });
+      setIsEditingPassword(false);
+    } catch (err: any) {
+      setPasswordMessage({ type: 'error', text: err.message });
+    } finally {
+      setIsLoading(prev => ({ ...prev, password: false }));
+    }
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setSelectedFile(file); // Guardamos el archivo para poder subirlo después
-      setPreviewImage(URL.createObjectURL(file)); // Creamos la URL para la vista previa
-      setMessage(null); // Limpiamos mensajes anteriores
+      setSelectedFile(file);
+      setPreviewImage(URL.createObjectURL(file));
+      setMessage(null);
     }
   };
 
-  // Se ejecuta cuando el usuario presiona "Guardar Foto"
-  const handleImageUpload = () => {
-    if (!selectedFile) {
-      setMessage("Por favor, selecciona una imagen primero.");
-      return;
-    }
+  const handleImageUpload = async () => {
+    if (!selectedFile) return;
 
+    setIsLoading(prev => ({ ...prev, photo: true }));
+    setMessage(null);
+    
     const formData = new FormData();
     formData.append("file", selectedFile);
-
     const token = localStorage.getItem("token") || "";
-    const UPLOAD_URL = "http://localhost:8000/user/upload-photo";
 
-    fetch(UPLOAD_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    })
-      .then((res) => {
-        if (!res.ok) {
-          // Si hay un error, lo procesamos para mostrar el mensaje
-          return res.json().then(err => { throw err; });
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.image_url) {
-          // Actualizamos el usuario en el estado y en localStorage con la nueva URL de la foto
-          const updatedUser = { ...user, profile_image_url: data.image_url };
-          setUser(updatedUser);
-          localStorage.setItem("user", JSON.stringify(updatedUser));
-          alert("¡Foto guardada!");
-          handleCancelUpload(); // Limpiamos la selección para terminar el proceso
-        } else {
-          setMessage(data.message || "No se pudo guardar la foto.");
-        }
-      })
-      .catch((err: any) => {
-        console.error("Error al subir imagen:", err);
-        setMessage(err.message || "Ocurrió un error inesperado.");
-      });
+    try {
+        const res = await fetch("http://localhost:8000/user/upload-photo", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "No se pudo guardar la foto.");
+
+        const updatedUser = { ...user, profile_image_url: data.image_url };
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        
+        alert("¡Foto de perfil actualizada!");
+        handleCancelUpload();
+
+    } catch(err: any) {
+        setMessage({ type: 'error', text: err.message });
+    } finally {
+        setIsLoading(prev => ({ ...prev, photo: false }));
+    }
   };
 
-  // Se ejecuta cuando el usuario presiona "Cancelar"
   const handleCancelUpload = () => {
     setPreviewImage(null);
     setSelectedFile(null);
-    // Limpiamos el input de archivo para poder volver a seleccionar la misma imagen si se desea
     const fileInput = document.getElementById("file-upload") as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = "";
-    }
+    if (fileInput) fileInput.value = "";
   };
-
-  // Determina qué URL de imagen mostrar: la guardada o la aleatoria
+  
   const profileImageUrl = user.profile_image_url
     ? `http://localhost:8000${user.profile_image_url}`
-    : "https://loremflickr.com/150/150/animals";
+    : `https://ui-avatars.com/api/?name=${user.first_name}+${user.last_name}&background=ffc107&color=000&size=150`;
 
-return (
+  return (
   <InfoContainer>
     <div className="container mt-4">
-      <h1>
-        <span className="text-warning">Mi Perfil</span>
-      </h1>
-      <p className="lead">
-        Aquí puedes gestionar la información de tu cuenta y cambiar tu contraseña.
-      </p>
-      <hr
-        className="my-4"
-        style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
-      />
-
-      <div className="card p-4 shadow-lg">
-        <div className="card-body">
-          <div className="row">
-            <div className="col-md-4 text-center mb-4 mb-md-0">
-              <img
-                src={previewImage || profileImageUrl}
-                className="img-fluid rounded-circle"
-                style={{ width: "150px", height: "150px", objectFit: "cover" }}
-                alt="Foto de perfil"
-              />
-              <div className="mt-3">
-                <label htmlFor="file-upload" className="btn btn-outline-primary">
-                  {selectedFile ? "Cambiar Selección" : "Elegir Foto"}
+      <div className="card card-custom shadow-lg mx-auto" style={{ maxWidth: '900px' }}>
+        <div className="card-header">
+          <h1 className="m-0 h3"><i className="bi bi-person-badge-fill text-warning me-2"></i>Mi Perfil</h1>
+        </div>
+        <div className="card-body p-lg-5">
+          {/* AÑADE la clase 'profile-responsive-row' aquí */}
+          <div className="row g-5 profile-responsive-row">
+            <div className="col-lg-4 text-center">
+              <div 
+                className="profile-pic-wrapper mx-auto" 
+                onClick={() => setIsDetailsVisible(!isDetailsVisible)}
+                data-bs-toggle="collapse" 
+                data-bs-target="#userDetailsCollapse"
+                aria-expanded={isDetailsVisible}
+                aria-controls="userDetailsCollapse"
+              >
+                <img src={previewImage || profileImageUrl} className="profile-pic" alt="Foto de perfil" />
+                <label htmlFor="file-upload" className="profile-pic-upload-btn" onClick={(e) => e.stopPropagation()}>
+                  <i className="bi bi-camera-fill"></i>
                 </label>
-                <input
-                  id="file-upload"
-                  type="file"
-                  className="d-none"
-                  onChange={handleImageChange}
-                  accept="image/*"
-                />
-                {selectedFile && (
-                  <>
-                    <button onClick={handleImageUpload} className="btn btn-success ms-2">
-                      Guardar Foto
-                    </button>
-                    <button onClick={handleCancelUpload} className="btn btn-secondary ms-2">
-                      Cancelar
-                    </button>
-                  </>
-                )}
+                <input id="file-upload" type="file" onChange={handleImageChange} accept="image/*" style={{ display: 'none' }} onClick={(e) => e.stopPropagation()} />
               </div>
-            </div>
-            <div className="col-md-8">
-              <h4>Datos Personales</h4>
-              <p>
-                <strong>Nombre:</strong> {user.first_name} {user.last_name}
-              </p>
-              <p>
-                <strong>Email:</strong> {user.email}
-              </p>
-              <p>
-                <strong>Rol:</strong> {user.type}
-              </p>
-              <hr />
-              <div className="mt-4">
-                <h5>Seguridad de la Cuenta</h5>
-                {isEditingPassword ? (
-                  <form onSubmit={handlePasswordChange}>
-                    <div className="mb-3">
-                      <label htmlFor="currentPassword">Contraseña Actual</label>
-                      <input
-                        type="password"
-                        id="currentPassword"
-                        className="form-control"
-                        value={currentPassword}
-                        onChange={e => setCurrentPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <label htmlFor="newPassword">Nueva Contraseña</label>
-                      <input
-                        type="password"
-                        id="newPassword"
-                        className="form-control"
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <label htmlFor="confirmNewPassword">Confirmar Nueva Contraseña</label>
-                      <input
-                        type="password"
-                        id="confirmNewPassword"
-                        className="form-control"
-                        value={confirmNewPassword}
-                        onChange={e => setConfirmNewPassword(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <button type="submit" className="btn btn-primary">Guardar Contraseña</button>
-                    <button type="button" className="btn btn-secondary ms-2" onClick={() => setIsEditingPassword(false)}>Cancelar</button>
-                  </form>
-                ) : (
-                  <button className="btn btn-outline-primary" onClick={() => setIsEditingPassword(true)}>
-                    Cambiar mi Contraseña
+              {selectedFile && (
+                <div className="mt-3">
+                  <button onClick={handleImageUpload} className="btn btn-sm btn-outline-success" disabled={isLoading.photo}>
+                      {isLoading.photo ? <span className="spinner-border spinner-border-sm"></span> : 'Guardar'}
                   </button>
-                )}
-                {passwordMessage && <div className="alert alert-danger mt-3">{passwordMessage}</div>}
+                  <button onClick={handleCancelUpload} className="btn btn-sm btn-outline-secondary ms-2" disabled={isLoading.photo}>Cancelar</button>
+                </div>
+              )}
+               {message && <div className={`alert small py-2 mt-3 alert-${message.type === 'success' ? 'success' : 'danger'}`}>{message.text}</div>}
+            </div>
+
+            <div className="col-lg-8">
+              <div className="collapse show" id="userDetailsCollapse">
+                  <h3>{user.first_name} {user.last_name}</h3>
+                  <p className="lead text-white-50">{user.email}</p>
+                  <span className="badge bg-warning text-dark">{user.type}</span>
+                  <hr className="hr-custom my-4" />
+                  
+                  {user.type === 'alumno' && (
+                    <div className="mb-4">
+                        <h5>Mis Carreras</h5>
+                        {isLoading.careers ? (
+                            <p className="text-white-50">Cargando carreras...</p>
+                        ) : (
+                          userCareers.length > 0 ? (
+                              <ul className="list-group list-group-flush">
+                                  {userCareers.map(career => (
+                                      <li key={career.carrera} className="list-group-item-custom">
+                                          <i className="bi bi-mortarboard-fill me-2 text-warning"></i>{career.carrera}
+                                      </li>
+                                  ))}
+                              </ul>
+                          ) : (
+                              <p className="text-white-50">No estás inscrito en ninguna carrera.</p>
+                          )
+                        )}
+                        <hr className="hr-custom my-4" />
+                    </div>
+                  )}
+              </div>
+              
+              <div className="security-section">
+                  {!isEditingPassword ? (
+                      <div className="d-flex justify-content-between align-items-center">
+                          <div><h5>Seguridad</h5><p className="text-white-50 mb-0">Actualiza tu contraseña.</p></div>
+                          <button className="btn btn-outline-primary" onClick={() => setIsEditingPassword(true)}>Cambiar</button>
+                      </div>
+                  ) : (
+                      <form onSubmit={handlePasswordChange}>
+                          <h5>Cambiar Contraseña</h5>
+                          <div className="mb-2"><label htmlFor="current_password">Contraseña Actual</label><input type="password" id="current_password" className="form-control" value={passwordData.current_password} onChange={handlePasswordInputChange} required /></div>
+                          <div className="mb-2"><label htmlFor="new_password">Nueva Contraseña</label><input type="password" id="new_password" className="form-control" value={passwordData.new_password} onChange={handlePasswordInputChange} required /></div>
+                          <div className="mb-3"><label htmlFor="confirm_new_password">Confirmar</label><input type="password" id="confirm_new_password" className="form-control" value={passwordData.confirm_new_password} onChange={handlePasswordInputChange} required /></div>
+                          {passwordMessage && <div className={`alert alert-${passwordMessage.type === 'success' ? 'success' : 'danger'} small py-2`}>{passwordMessage.text}</div>}
+                          <div className="d-flex justify-content-end">
+                              <button type="button" className="btn btn-outline-secondary me-2" onClick={() => setIsEditingPassword(false)}>Cancelar</button>
+                              <button type="submit" className="btn btn-outline-success" disabled={isLoading.password}>{isLoading.password ? <span className="spinner-border spinner-border-sm"></span> : 'Actualizar'}</button>
+                          </div>
+                      </form>
+                  )}
               </div>
             </div>
           </div>
-          {message && <div className="alert alert-danger mt-3">{message}</div>}
         </div>
       </div>
     </div>
