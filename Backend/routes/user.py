@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from fastapi import APIRouter, Request, Header, File, UploadFile
 from fastapi.responses import JSONResponse
-from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer, InputUserUpdate
+from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer, InputUserUpdate, InputPasswordChange
 from sqlalchemy.orm import joinedload
 from auth.security import Security
 import shutil
@@ -356,5 +356,39 @@ def delete_user(user_id: int, authorization: str | None = Header(default=None)):
         db_session.rollback()
         print(f"Error al eliminar usuario: {ex}")
         return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
+    finally:
+        db_session.close()
+@user.post("/user/change-password/self")
+def change_own_password(pass_data: InputPasswordChange, authorization: str | None = Header(default=None)):
+    """
+    Permite a un usuario logueado cambiar su propia contraseña,
+    verificando primero la contraseña actual.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    username = token_data.get("username")
+    if not username:
+        return JSONResponse(status_code=401, content={"message": "Token inválido."})
+
+    db_session = session
+    try:
+        # 1. Buscamos al usuario por el username del token
+        user_to_update = db_session.query(User).filter(User.username == username).first()
+        if not user_to_update:
+            return JSONResponse(status_code=404, content={"message": "Usuario no encontrado."})
+        
+        # 2. Verificamos que la contraseña actual sea correcta
+        if user_to_update.password != pass_data.current_password:
+            return JSONResponse(status_code=403, content={"message": "La contraseña actual es incorrecta."})
+
+        # 3. Si todo es correcto, actualizamos a la nueva contraseña
+        user_to_update.password = pass_data.new_password
+        db_session.commit()
+        
+        return JSONResponse(status_code=200, content={"message": "Contraseña actualizada con éxito."})
+
+    except Exception as e:
+        db_session.rollback()
+        return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
     finally:
         db_session.close()

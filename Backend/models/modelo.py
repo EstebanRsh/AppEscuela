@@ -114,6 +114,10 @@ class InputUserUpdate(BaseModel):
     dni: int
     type: str
     email: str
+    
+class InputPasswordChange(BaseModel):
+    current_password: str
+    new_password: str
 
 # endregion
 
