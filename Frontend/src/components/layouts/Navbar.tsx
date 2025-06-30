@@ -77,7 +77,7 @@ const Navbar = () => {
                 <li className="nav-item">
                   <NavLink
                     className="nav-link"
-                    to="/users"
+                    to="/admin/users"
                     style={({ isActive }) =>
                       isActive ? activeLinkStyle : undefined
                     }
@@ -89,7 +89,7 @@ const Navbar = () => {
                 <li className="nav-item">
                   <NavLink
                     className="nav-link"
-                    to="/payments"
+                    to="/admin/payments"
                     style={({ isActive }) =>
                       isActive ? activeLinkStyle : undefined
                     }
@@ -101,7 +101,7 @@ const Navbar = () => {
                 <li className="nav-item">
                   <NavLink
                     className="nav-link"
-                    to="/careers"
+                    to="/admin/careers"
                     style={({ isActive }) =>
                       isActive ? activeLinkStyle : undefined
                     }
@@ -117,7 +117,7 @@ const Navbar = () => {
                 <li className="nav-item">
                   <NavLink
                     className="nav-link"
-                    to="/my-payments"
+                    to="/student/payments"
                     style={({ isActive }) =>
                       isActive ? activeLinkStyle : undefined
                     }
@@ -129,7 +129,7 @@ const Navbar = () => {
                 <li className="nav-item">
                   <NavLink
                     className="nav-link"
-                    to="/my-careers"
+                    to="/student/careers"
                     style={({ isActive }) =>
                       isActive ? activeLinkStyle : undefined
                     }
