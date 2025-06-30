@@ -172,7 +172,7 @@ def get_students_in_career(career_id: int, authorization: str | None = Header(de
     finally:
         db_session.close()
     
-@career.get("/professor/dashboard-data")
+@career.get("/professor/careers-data")
 def get_professor_dashboard_data(authorization: str | None = Header(default=None)):
     """
     Endpoint para el dashboard del profesor.

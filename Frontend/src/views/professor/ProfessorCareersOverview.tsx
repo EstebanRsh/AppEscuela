@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
 
 // Tipo para los datos que esperamos de la API
@@ -8,18 +9,18 @@ type CareerData = {
   student_count: number;
 };
 
-function ProfessorDashboard() {
-  const [dashboardData, setDashboardData] = useState<CareerData[]>([]);
+function ProfessorCareersOverview() {
+  const [dashboardData, setCareerData] = useState<CareerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchCareerData = async () => {
       const token = localStorage.getItem("token") || "";
-      const PROF_DASHBOARD_URL = "http://localhost:8000/professor/dashboard-data";
+      const PROF_CAREERS_URL = "http://localhost:8000/professor/careers-data";
 
       try {
-        const response = await fetch(PROF_DASHBOARD_URL, {
+        const response = await fetch(PROF_CAREERS_URL, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -29,7 +30,7 @@ function ProfessorDashboard() {
         }
 
         const data = await response.json();
-        setDashboardData(data);
+        setCareerData(data);
       } catch (error: any) {
         setMessage(error.message);
       } finally {
@@ -37,7 +38,7 @@ function ProfessorDashboard() {
       }
     };
 
-    fetchDashboardData();
+    fetchCareerData();
   }, []);
 
   if (isLoading) {
@@ -59,7 +60,7 @@ function ProfessorDashboard() {
           <div className="card-header">
             <h1 className="m-0 h3">
               <i className="bi bi-person-video3 text-warning me-2"></i>
-              Dashboard de Profesor
+              Carreras Asignadas
             </h1>
           </div>
           <div className="card-body">
@@ -73,13 +74,33 @@ function ProfessorDashboard() {
               <div className="row g-4">
                 {dashboardData.map((career) => (
                   <div key={career.career_id} className="col-md-6 col-lg-4">
-                    <div className="card card-custom h-100">
-                      <div className="card-body text-center">
-                        <h5 className="card-title text-warning">{career.career_name}</h5>
-                        <p className="display-4 fw-bold">{career.student_count}</p>
-                        <p className="card-text text-white-50">Alumnos Inscritos</p>
+                    {/* Envolvemos toda la tarjeta en un Link */}
+                    <Link 
+                      to={`/professor/career/${career.career_id}/subjects`} 
+                      className="text-decoration-none"
+                      title={`Ver materias de ${career.career_name}`}
+                    >
+                      <div className="card card-custom dashboard-card h-100">
+                        {/* Usamos d-flex y flex-column para que el botón se vaya al fondo
+                        */}
+                        <div className="card-body text-center d-flex flex-column justify-content-between">
+                          {/* Contenido principal de la tarjeta */}
+                          <div>
+                            <h5 className="card-title text-warning">{career.career_name}</h5>
+                            <p className="display-4 fw-bold">{career.student_count}</p>
+                            <p className="card-text text-white-50">Alumnos Inscritos</p>
+                          </div>
+                          
+                          {/* Botón añadido en la parte inferior */}
+                          <div className="mt-3">
+                            <span className="btn btn-outline-warning btn-sm">
+                              <i className="bi bi-book-half me-2"></i>
+                              Ver Materias
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 ))}
               </div>
@@ -95,4 +116,4 @@ function ProfessorDashboard() {
   );
 }
 
-export default ProfessorDashboard;
+export default ProfessorCareersOverview;

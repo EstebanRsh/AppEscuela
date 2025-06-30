@@ -156,13 +156,13 @@ const Navbar = () => {
               <li className="nav-item">
                 <NavLink
                   className="nav-link"
-                  to="/professor/dashboard"
+                  to="/professor/careers"
                   style={({ isActive }) =>
                     isActive ? activeLinkStyle : undefined
                   }
                   onClick={closeNavbarCollapse}
                 >
-                  Dashboard 
+                  Carreras 
                 </NavLink>
               </li>
             )}

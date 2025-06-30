@@ -29,7 +29,8 @@ function App() {
   const MyPayments = lazy(() => import("./views/student/MyPayments"));
   const MyCareers = lazy(() => import("./views/student/MyCareers"));
   // Componentes de Profesor
-  const ProfessorDashboard = lazy(() => import("./views/professor/ProfessorCareers"));
+  const ProfessorCareersOverview = lazy(() => import("./views/professor/ProfessorCareersOverview"));
+  const ProfessorSubjectsView = lazy(() => import("./views/professor/ProfessorSubjectsView"));
 
   return (
     <BrowserRouter>
@@ -64,7 +65,8 @@ function App() {
               <Route path="/my-careers" element={<MyCareers />} />
             </Route>
             <Route element={<ProfessorRoutes />}>
-              <Route path="/professor/dashboard" element={<ProfessorDashboard />} />
+              <Route path="/professor/careers" element={<ProfessorCareersOverview />} />
+              <Route path="/professor/career/:careerId/subjects" element={<ProfessorSubjectsView />} />
             </Route>
           </Route>
         </Route>
