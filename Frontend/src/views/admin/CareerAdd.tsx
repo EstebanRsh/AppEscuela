@@ -38,7 +38,7 @@ function CareerAdd() {
             throw new Error(result.message || "Error al añadir la carrera.");
         }
 
-        alert(result.message); // Usamos alert para el éxito y luego navegamos
+        alert(result.message);
         navigate('/careers');
 
     } catch (err: any) {
@@ -71,13 +71,13 @@ function CareerAdd() {
                             className="form-control"
                             value={careerName}
                             onChange={(e) => setCareerName(e.target.value)}
-                            placeholder="Ej: Tecnicatura Univercitaria en Programación"
+                            placeholder="Ej: Tecnicatura Universitaria en Programación"
                             required
                         />
                     </div>
 
                     {message && (
-                        <div className={`alert mt-3 ${message.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
+                        <div className={`alert mt-3 alert-${message.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
                             {message.text}
                         </div>
                     )}

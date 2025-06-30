@@ -39,13 +39,13 @@ function Dashboard() {
     <InfoContainer>
       <div className="container mt-4">
         {/* Sección de Bienvenida (Jumbotron) */}
-        <div className="p-5 mb-4 bg-dark-transparent rounded-3 shadow">
-          <div className="container-fluid py-3">
+        <div className="p-4 mb-4 bg-dark-transparent rounded-3 shadow">
+          <div className="container-fluid py-2">
             <h1 className="display-5 fw-bold">
               <span className="text-warning">Bienvenido, {user?.first_name || 'a la plataforma'}</span>
             </h1>
             <p className="col-md-10 fs-4">
-              Desde aquí podrás acceder a todas las funcionalidades según tu rol. Utiliza las tarjetas de acceso rápido para navegar por el sistema.
+              Utiliza las tarjetas de acceso rápido para navegar por el sistema.
             </p>
           </div>
         </div>

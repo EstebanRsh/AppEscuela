@@ -1,137 +1,153 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InfoContainer from '../../components/common/InfoContainer';
-// Tipos para los datos que cargaremos en los desplegables
-type User = { id: number; username: string; first_name: string; last_name: string; };
+
+// Tipos para los datos
+type User = { id: number; first_name: string; last_name: string; };
 type Career = { id: number; name: string; };
 
 function PaymentAdd() {
   const navigate = useNavigate();
   
-  // Estados para guardar las listas de usuarios y carreras
+  const [formData, setFormData] = useState({
+    id_user: '',
+    id_career: '',
+    amount: '',
+    affected_month: ''
+  });
+  
   const [users, setUsers] = useState<User[]>([]);
   const [careers, setCareers] = useState<Career[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [isLoading, setIsLoading] = useState({ page: true, submit: false });
 
-  // Refs para los campos del formulario
-  const userRef = useRef<HTMLSelectElement>(null);
-  const careerRef = useRef<HTMLSelectElement>(null);
-  const amountRef = useRef<HTMLInputElement>(null);
-  const monthRef = useRef<HTMLInputElement>(null);
-
-  // useEffect para cargar usuarios y carreras al montar el componente
+  // Carga inicial de usuarios y carreras
   useEffect(() => {
     const token = localStorage.getItem("token") || "";
     const headers = { "Authorization": `Bearer ${token}` };
 
-    // Cargar usuarios (alumnos)
-    fetch("http://localhost:8000/users/all", { headers })
-      .then(res => res.json())
-      .then(data => {
-        // Filtramos para quedarnos solo con los alumnos
-        const studentUsers = data.filter((user: User & { type: string }) => user.type === 'alumno');
-        setUsers(studentUsers);
-      });
+    const fetchData = async () => {
+        try {
+            const [usersRes, careersRes] = await Promise.all([
+                fetch("http://localhost:8000/users/all", { headers }),
+                fetch("http://localhost:8000/career/all", { headers })
+            ]);
+            if (!usersRes.ok || !careersRes.ok) throw new Error("No se pudieron cargar los datos para el formulario.");
 
-    // Cargar carreras
-    fetch("http://localhost:8000/career/all", { headers })
-      .then(res => res.json())
-      .then(data => setCareers(data));
+            const allUsers = await usersRes.json();
+            const careersData = await careersRes.json();
+
+            setUsers(allUsers.filter((user: User & { type: string }) => user.type === 'alumno'));
+            setCareers(careersData);
+        } catch (err: any) {
+            setMessage({ type: 'error', text: err.message });
+        } finally {
+            setIsLoading(prev => ({...prev, page: false}));
+        }
+    };
+    fetchData();
   }, []);
 
-  const handleAddPayment = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleAddPayment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(prev => ({...prev, submit: true}));
     setMessage(null);
-
-    const paymentData = {
-      id_user: parseInt(userRef.current?.value || '0'),
-      id_career: parseInt(careerRef.current?.value || '0'),
-      amount: parseInt(amountRef.current?.value || '0'),
-      affected_month: monthRef.current?.value,
-    };
-
-    if (!paymentData.id_user || !paymentData.id_career || !paymentData.amount || !paymentData.affected_month) {
-      setMessage("Todos los campos son obligatorios.");
-      return;
-    }
 
     const token = localStorage.getItem("token") || "";
     const ADD_PAYMENT_URL = "http://localhost:8000/payment/add";
     
-    fetch(ADD_PAYMENT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(paymentData)
-    })
-    .then(res => res.json())
-    .then(data => {
-      alert(data.message || "Pago registrado con éxito.");
-      navigate('/payments');
-    })
-    .catch(err => {
-      console.error("Error al añadir pago:", err);
-      setMessage(err.message || "Ocurrió un error.");
-    });
+    try {
+        const res = await fetch(ADD_PAYMENT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+            body: JSON.stringify({
+                ...formData,
+                amount: Number(formData.amount),
+                id_user: Number(formData.id_user),
+                id_career: Number(formData.id_career)
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Ocurrió un error al registrar el pago.");
+        
+        alert("Pago registrado con éxito.");
+        navigate('/payments');
+    } catch (err: any) {
+        setMessage({ type: 'error', text: err.message });
+    } finally {
+        setIsLoading(prev => ({...prev, submit: false}));
+    }
   };
 
+  if (isLoading.page) {
+    return (
+        <InfoContainer>
+            <div className="container mt-4 text-center">
+                <div className="spinner-border text-warning" role="status"></div>
+            </div>
+        </InfoContainer>
+    );
+  }
+
   return (
-  <InfoContainer>
-    <div className="container mt-4">
-      {/* Sección de título, similar al dashboard */}
-      <h1>
-        <span className="text-warning">Registrar Nuevo Pago</span>
-      </h1>
-      <p className="lead">
-        Completa los siguientes campos para registrar un nuevo pago.
-      </p>
-      <hr
-        className="my-4"
-        style={{ borderColor: "rgba(255, 255, 255, 0.5)" }}
-      />
+    <InfoContainer>
+      <div className="container mt-4">
+        <div className="card card-custom shadow-lg mx-auto" style={{ maxWidth: '800px' }}>
+            <div className="card-header">
+                <h1 className="m-0 h3">
+                    <i className="bi bi-cash-stack text-warning me-2"></i>
+                    Registrar Nuevo Pago
+                </h1>
+            </div>
+            <div className="card-body p-4">
+                <p className="lead mb-4">
+                    Completa los campos para registrar un nuevo pago en el sistema.
+                </p>
+                <form onSubmit={handleAddPayment}>
+                    <div className="row g-3">
+                        <div className="col-md-6">
+                            <label htmlFor="id_user" className="form-label">Alumno</label>
+                            <select id="id_user" className="form-select" value={formData.id_user} onChange={handleInputChange} required>
+                                <option value="">Seleccione un alumno</option>
+                                {users.map(user => (<option key={user.id} value={user.id}>{user.first_name} {user.last_name}</option>))}
+                            </select>
+                        </div>
+                        <div className="col-md-6">
+                            <label htmlFor="id_career" className="form-label">Carrera</label>
+                            <select id="id_career" className="form-select" value={formData.id_career} onChange={handleInputChange} required>
+                                <option value="">Seleccione una carrera</option>
+                                {careers.map(career => (<option key={career.id} value={career.id}>{career.name}</option>))}
+                            </select>
+                        </div>
+                        <div className="col-md-6">
+                            <label htmlFor="amount" className="form-label">Monto (ARS)</label>
+                            <input type="number" id="amount" className="form-control" value={formData.amount} onChange={handleInputChange} required />
+                        </div>
+                        <div className="col-md-6">
+                            <label htmlFor="affected_month" className="form-label">Mes Afectado</label>
+                            <input type="date" id="affected_month" className="form-control" value={formData.affected_month} onChange={handleInputChange} required />
+                        </div>
+                    </div>
 
-      <div className="card p-4 shadow-lg">
-        {/* Se eliminó el <h2> aquí ya que ahora es parte del h1 anterior */}
-        <form onSubmit={handleAddPayment}>
-          <div className="mb-3">
-            <label htmlFor="user" className="form-label">Alumno</label>
-            <select id="user" className="form-select" ref={userRef} required>
-              <option value="">Seleccione un alumno</option>
-              {users.map(user => (
-                <option key={user.id} value={user.id}>
-                  {user.first_name} {user.last_name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="mb-3">
-            <label htmlFor="career" className="form-label">Carrera</label>
-            <select id="career" className="form-select" ref={careerRef} required>
-              <option value="">Seleccione una carrera</option>
-              {careers.map(career => (
-                <option key={career.id} value={career.id}>{career.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="mb-3">
-            <label htmlFor="amount" className="form-label">Monto</label>
-            <input type="number" id="amount" className="form-control" ref={amountRef} required />
-          </div>
-          <div className="mb-3">
-            <label htmlFor="month" className="form-label">Mes Afectado</label>
-            <input type="date" id="month" className="form-control" ref={monthRef} required />
-          </div>
+                    {message && <div className={`alert mt-4 alert-${message.type}`}>{message.text}</div>}
 
-          <button type="submit" className="btn btn-primary">Añadir Pago</button>
-          <button type="button" className="btn btn-secondary ms-2" onClick={() => navigate('/payments')}>Cancelar</button>
-          {message && <div className="alert alert-danger mt-3">{message}</div>}
-        </form>
+                    <div className="d-flex justify-content-end mt-4">
+                        <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate('/payments')}>Cancelar</button>
+                        <button type="submit" className="btn btn-outline-success" disabled={isLoading.submit}>
+                            {isLoading.submit ? <><span className="spinner-border spinner-border-sm me-2"></span>Registrando...</> : 'Añadir Pago'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
       </div>
-    </div>
-  </InfoContainer>
-);
+    </InfoContainer>
+  );
 }
 
 export default PaymentAdd;

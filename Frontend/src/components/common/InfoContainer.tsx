@@ -11,7 +11,9 @@ const InfoContainer: React.FC<InfoContainerProps> = ({ children, className = '' 
 
   return (
     <div className={containerClasses}>
-      {children}
+      <div className="flex-grow-1">
+        {children}
+      </div>
     </div>
   );
 };

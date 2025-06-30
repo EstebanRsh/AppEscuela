@@ -13,7 +13,7 @@ body {
 }
 
 .info-container {
-  background-color: rgba(0, 0, 0, 0.85);
+  background-color: rgba(0, 0, 0, 0.479);
   padding: 1.5rem;
   border-radius: 0.2rem;
   margin-top: 0.2rem;
@@ -22,57 +22,74 @@ body {
 }
 
 .hr-custom {
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: #555;
+}
+.footer-custom {
+  background-color: rgba(0, 0, 0, 0.5); /* Un fondo oscuro semitransparente */
+  color: rgba(255, 255, 255, 0.7); /* Texto blanco con algo de transparencia */
+  font-size: 0.9em;
+  border-top: 1px solid rgba(255, 255, 255, 0.1); /* Una línea sutil de separación */
 }
 
 /* ==========================================================================
-   2. ESTILOS PARA COMPONENTES ESPECÍFICOS
+   2. ESTILOS PARA COMPONENTES (VERSIÓN SÓLIDA)
    ========================================================================== */
+/* --- Enlace de Cerrar Sesión --- */
+.logout-link {
+  color: rgba(255, 255, 255, 0.65) !important;
+  transition: color 0.2s ease-in-out;
+}
+
+/* El ícono y el texto se vuelven rojos al pasar el cursor */
+.logout-link:hover,
+.logout-link:hover i {
+  color: #dc3545 !important;
+}
 
 /* --- Tarjetas Personalizadas --- */
 .card-custom {
-  background-color: rgba(22, 22, 22, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #212529;
+  border: 1px solid #495057;
   color: white;
 }
 
 .card-custom .card-header {
-  background-color: rgba(33, 37, 41, 0.7);
-  border-bottom: 1px solid rgba(255, 193, 7, 0.5);
+  background-color: #343a40;
+  border-bottom: 1px solid #ffc107;
 }
 
 /* --- Tarjetas del Dashboard --- */
 .dashboard-card {
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  border-color: rgba(255, 193, 7, 0.2);
+  border-color: #495057;
 }
 
 .dashboard-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 0.5rem 1.5rem rgba(255, 193, 7, 0.15);
+  box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.3);
   cursor: pointer;
-  border-color: rgba(255, 193, 7, 0.5);
+  border-color: #ffc107;
 }
 
 .bg-dark-transparent {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: #343a40;
 }
 
 /* --- Tablas y Estados Vacíos --- */
 .table {
   --bs-table-bg: transparent;
-  --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
-  --bs-table-hover-bg: rgba(255, 255, 255, 0.1);
+  --bs-table-striped-bg: #2c3034;
+  --bs-table-hover-bg: #343a40;
   --bs-table-color: white;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: #495057;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .table thead {
-  background-color: rgba(33, 37, 41, 0.8) !important;
+  background-color: #212529 !important;
 }
 
 .table-hover > tbody > tr:hover > * {
-  --bs-table-accent-bg: rgba(255, 193, 7, 0.1);
   color: #ffc107;
 }
 
@@ -99,7 +116,7 @@ body {
   height: 40px;
   border-radius: 50%;
   cursor: pointer;
-  border: 2px solid rgba(255, 193, 7, 0.7);
+  border: 2px solid #ffc107;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -115,7 +132,7 @@ body {
   width: 280px;
   background-color: #2c3034;
   border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid #495057;
   box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.5);
   z-index: 1021;
   color: white;
@@ -140,60 +157,106 @@ body {
 }
 
 .dropdown-item-custom:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #343a40;
   color: #ffc107;
 }
 
 .dropdown-divider-custom {
   height: 1px;
   margin: 0.5rem 0;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: #495057;
 }
 
 @keyframes fadeInNavbar {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* --- Estilos para la Página de Perfil --- */
+.profile-pic-wrapper {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 193, 7, 0.5); 
+  box-shadow: 0 0 15px rgba(255, 193, 7, 0.2);
+  transition: all 0.3s ease; 
+  cursor: pointer;
+}
 
+.profile-pic {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
 
+.profile-pic-upload-btn {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 35px;
+  height: 35px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #ffc107;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #ffc107;
+  opacity: 0; 
+}
+
+.profile-pic-wrapper:hover .profile-pic-upload-btn {
+  opacity: 1; /* Aparece en hover */
+  transform: scale(1.1);
+}
+
+.profile-pic-upload-btn:hover {
+  background-color: #ffc107;
+  color: black;
+}
+
+.list-group-flush .list-group-item-custom {
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 0.25rem;
+  color: white;
+}
+
+.list-group-flush .list-group-item-custom:last-child {
+  border-bottom: 0;
+}
 /* ==========================================================================
    3. ESTILOS RESPONSIVOS (PARA MÓVILES)
    ========================================================================== */
 
-/* --- Tablas en Móvil (se convierten en tarjetas) --- */
 @media (max-width: 767.98px) {
-  .table-responsive-cards thead {
-    border: none;
-    clip: rect(0 0 0 0);
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    padding: 0;
-    position: absolute;
-    width: 1px;
+  /* [CAMBIO FINAL] Reduce los bordes en la vista móvil */
+  .info-container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
-
+  
+  /* --- Tablas en Móvil --- */
+  .table-responsive-cards thead { display: none; }
   .table-responsive-cards tr {
     display: block;
     margin-bottom: 1rem;
-    border: 1px solid rgba(255, 193, 7, 0.2);
+    border: 1px solid #495057;
     border-radius: 0.375rem;
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: #2c3034;
   }
-
   .table-responsive-cards td {
     display: flex;
     justify-content: space-between;
     align-items: center;
     text-align: right;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid #343a40;
     padding: 0.75rem;
   }
-  
-  .table-responsive-cards tr td:last-child {
-    border-bottom: 0;
-  }
-
+  .table-responsive-cards tr td:last-child { border-bottom: 0; }
   .table-responsive-cards td::before {
     content: attr(data-label);
     font-weight: bold;
@@ -201,17 +264,11 @@ body {
     text-align: left;
     margin-right: 1rem;
   }
-
-  .table-responsive-cards td.actions-cell {
-    justify-content: center;
-  }
-
-  .table-responsive-cards td.actions-cell::before {
-    display: none;
-  }
+  .table-responsive-cards td.actions-cell { justify-content: center; }
+  .table-responsive-cards td.actions-cell::before { display: none; }
 }
 
-/* --- Vista de Perfil en Móvil (pantalla completa) --- */
+/* --- Vista de Perfil en Móvil --- */
 .mobile-profile-view {
   position: fixed;
   top: 0;
@@ -226,11 +283,7 @@ body {
   display: flex;
   flex-direction: column;
 }
-
-.mobile-profile-view.active {
-  transform: translateX(0);
-}
-
+.mobile-profile-view.active { transform: translateX(0); }
 .mobile-profile-header {
   display: flex;
   justify-content: space-between;
@@ -239,7 +292,6 @@ body {
   background-color: #343a40;
   flex-shrink: 0;
 }
-
 .mobile-profile-content {
   flex-grow: 1;
   padding: 2rem 1rem;
@@ -249,11 +301,55 @@ body {
 
 /* --- Ajustes al Navbar en Móvil --- */
 @media (max-width: 991.98px) {
-  .nav-item-profile {
-    margin: 0.5rem 0;
-  }
+  .nav-item-profile { margin: 0.5rem 0; }
   .profile-dropdown-menu-navbar {
     right: 15px; 
     left: auto;
   }
+}
+
+/* --- Hace que los botones de los formularios se apilen en móvil --- */
+@media (max-width: 575.98px) {
+  .form-actions-responsive {
+    flex-direction: column-reverse; /* Pone los botones de Guardar/Cancelar arriba */
+    gap: 1rem; /* Añade espacio entre los grupos de botones */
+    align-items: stretch; /* Hace que los botones ocupen todo el ancho */
+  }
+
+  .form-actions-responsive > div {
+    display: flex;
+    justify-content: flex-end; /* Mantiene la alineación original en su fila */
+  }
+    .form-actions-responsive > div {
+    display: contents; /* Esto hace que los botones internos se comporten como hijos directos */
+  }
+  .form-actions-responsive .btn {
+      flex-grow: 1; /* Permite que los botones crezcan y se dividan el espacio */
+  }
+}
+
+/* ==========================================================================
+   4. ESTILOS ADICIONALES Y FINALES
+   ========================================================================== */
+
+/* --- Enlace de Cerrar Sesión --- */
+.logout-link {
+  color: rgba(255, 255, 255, 0.65) !important;
+  transition: color 0.2s ease-in-out;
+}
+
+.logout-link:hover {
+  color: #dc3545 !important; /* Color de peligro de Bootstrap */
+}
+
+/* ==========================================================================
+   5. ESTILOS PARA EL FOOTER
+   ========================================================================== */
+
+.footer-custom {
+  background-color: #212529; /* Un color oscuro sólido */
+  color: rgba(255, 255, 255, 0.5); /* Texto blanco con opacidad */
+  font-size: 0.9rem;
+  border-top: 1px solid #343a40;
+  width: 100%;
 }

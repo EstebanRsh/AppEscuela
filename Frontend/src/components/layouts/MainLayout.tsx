@@ -1,16 +1,18 @@
 import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "../layouts/Navbar";
+import Footer from "../layouts/Footer"; 
 
 function MainLayout() {
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Navbar />
-      <main>
+      <main style={{ flex: 1 }}>
         <Suspense fallback={<div>Cargando...</div>}>
           <Outlet />
         </Suspense>
       </main>
+      <Footer /> 
     </div>
   );
 }

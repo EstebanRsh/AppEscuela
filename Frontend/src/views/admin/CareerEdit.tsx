@@ -89,54 +89,54 @@ function CareerEdit() {
   };
 
   return (
-    <InfoContainer>
-        <div className="container mt-4">
-            <div className="card card-custom shadow-lg mx-auto" style={{ maxWidth: '700px' }}>
-                <div className="card-header">
-                    <h1 className="m-0 h3">
-                        <i className="bi bi-pencil-fill text-warning me-2"></i>
-                        Editando Carrera
-                    </h1>
-                </div>
-                <div className="card-body p-4">
-                    <p className="lead mb-4">
-                        Modifica el nombre de la carrera o elimínala del sistema.
-                    </p>
-                    <form onSubmit={handleUpdateCareer}>
-                        <div className="mb-3">
-                            <label htmlFor="careerName" className="form-label">Nombre de la Carrera</label>
-                            <input
-                                type="text"
-                                id="careerName"
-                                className="form-control"
-                                value={careerName}
-                                onChange={(e) => setCareerName(e.target.value)}
-                                required
-                            />
-                        </div>
+  <InfoContainer>
+      <div className="container mt-4">
+          <div className="card card-custom shadow-lg mx-auto" style={{ maxWidth: '700px' }}>
+              <div className="card-header">
+                  <h1 className="m-0 h3">
+                      <i className="bi bi-pencil-fill text-warning me-2"></i>
+                      Editando Carrera
+                  </h1>
+              </div>
+              <div className="card-body p-4">
+                  <p className="lead mb-4">
+                      Modifica el nombre de la carrera <span className="text-warning fw-bold"></span> o elimínala del sistema.
+                  </p>
+                  <form onSubmit={handleUpdateCareer}>
+                      <div className="mb-3">
+                          <label htmlFor="careerName" className="form-label">Nombre de la Carrera</label>
+                          <input
+                              type="text"
+                              id="careerName"
+                              className="form-control"
+                              value={careerName}
+                              onChange={(e) => setCareerName(e.target.value)}
+                              required
+                          />
+                      </div>
 
-                        {message && <div className={`alert mt-3 ${message.type === 'error' ? 'alert-danger' : 'alert-success'}`}>{message.text}</div>}
+                      {message && <div className={`alert mt-3 alert-${message.type === 'error' ? 'alert-danger' : 'alert-success'}`}>{message.text}</div>}
 
-                        <div className="d-flex justify-content-between mt-4">
-                            <button type="button" className="btn btn-outline-danger" onClick={handleDeleteCareer} disabled={isDeleting}>
-                                {isDeleting ? <span className="spinner-border spinner-border-sm"></span> : <><i className="bi bi-trash-fill me-2"></i>Eliminar</>}
-                            </button>
-                            <div>
-                                <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate('/careers')}>
-                                    Cancelar
-                                </button>
-                                <button type="submit" className="btn btn-outline-success" disabled={isLoading}>
-                                    {isLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : ''}
-                                    Guardar Cambios
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </InfoContainer>
-  );
+                      <div className="d-flex justify-content-between mt-4 form-actions-responsive">
+                              <button type="submit" className="btn btn-outline-success" disabled={isLoading}>
+                                  {isLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : ''}
+                                  Guardar Cambios
+                              </button>
+                          <div className="d-flex">
+                              <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate('/careers')}>
+                                  Cancelar
+                              </button>
+                          <button type="button" className="btn btn-outline-danger" onClick={handleDeleteCareer} disabled={isDeleting}>
+                              {isDeleting ? <span className="spinner-border spinner-border-sm"></span> : <><i className="bi bi-trash-fill me-2"></i>Eliminar</>}
+                          </button>
+                          </div>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </InfoContainer>
+);
 }
 
 export default CareerEdit;
