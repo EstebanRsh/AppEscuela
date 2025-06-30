@@ -465,3 +465,4 @@ def unassign_career_from_user(user_id: int, career_id: int, authorization: str |
         return JSONResponse(status_code=500, content={"message": "Error interno al quitar la carrera."})
     finally:
         db_session.close()
+

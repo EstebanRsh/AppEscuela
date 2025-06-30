@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Header
 from fastapi.responses import JSONResponse
-from models.modelo import Career, InputCareer, session, User, PivoteUserCareer
+from models.modelo import Career, InputCareer, session, User, PivoteUserCareer, UserDetail
+from sqlalchemy import func
 from auth.security import Security
+from sqlalchemy.orm import joinedload
 
 career = APIRouter()
 
 @career.get("/career/all")
-# Esta ruta puede ser accedida por cualquier usuario logueado, no necesita seguridad de admin.
 def get_careers():
     return session.query(Career).all()
 
@@ -151,10 +152,8 @@ def get_students_in_career(career_id: int, authorization: str | None = Header(de
         # Buscamos todas las inscripciones para esa carrera
         enrollments = db_session.query(PivoteUserCareer).filter(PivoteUserCareer.id_career == career_id).all()
         
-        # Preparamos la lista de alumnos
         student_list = []
         for enrollment in enrollments:
-            # Nos aseguramos de que el usuario sea un alumno
             if enrollment.user and enrollment.user.userdetail and enrollment.user.userdetail.type == 'alumno':
                 student_data = {
                     "id": enrollment.user.id,
@@ -170,5 +169,55 @@ def get_students_in_career(career_id: int, authorization: str | None = Header(de
     except Exception as e:
         db_session.rollback()
         return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
+    finally:
+        db_session.close()
+    
+@career.get("/professor/dashboard-data")
+def get_professor_dashboard_data(authorization: str | None = Header(default=None)):
+    """
+    Endpoint para el dashboard del profesor.
+    Devuelve las carreras asignadas al profesor y el número de alumnos en cada una.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    username = token_data.get("username")
+
+    if not username:
+        return JSONResponse(status_code=401, content={"message": "Token inválido."})
+
+    db_session = session
+    try:
+        professor_user = db_session.query(User).options(joinedload(User.userdetail)).filter(User.username == username).first()
+        if not professor_user or professor_user.userdetail.type != 'profesor':
+            return JSONResponse(status_code=403, content={"message": "Acceso denegado. Se requiere rol de profesor."})
+
+        professor_careers = db_session.query(PivoteUserCareer).filter(PivoteUserCareer.id_user == professor_user.id).all()
+
+        if not professor_careers:
+            return []
+
+        dashboard_data = []
+        for prof_career in professor_careers:
+            enrollments_in_career = db_session.query(PivoteUserCareer).options(
+                joinedload(PivoteUserCareer.user).joinedload(User.userdetail)
+            ).filter(PivoteUserCareer.id_career == prof_career.id_career).all()
+            
+            student_count = 0
+            for enrollment in enrollments_in_career:
+                if enrollment.user and enrollment.user.userdetail and enrollment.user.userdetail.type == 'alumno':
+                    student_count += 1
+
+            dashboard_data.append({
+                "career_id": prof_career.career.id,
+                "career_name": prof_career.career.name,
+                "student_count": student_count
+            })
+            
+        return dashboard_data
+
+    except Exception as e:
+        db_session.rollback()
+        print(f"Error en dashboard de profesor: {e}")
+        return JSONResponse(status_code=500, content={"message": "Error interno al obtener los datos del dashboard."})
     finally:
         db_session.close()

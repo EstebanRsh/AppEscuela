@@ -5,6 +5,7 @@ import PublicRoutes from "./components/router/PublicRoutes";
 import ProtectedRoutes from "./components/router/ProtectedRoutes";
 import AdminRoutes from "./components/router/AdminRoutes";
 import StudentRoutes from "./components/router/StudentRoutes";
+import ProfessorRoutes from "./components/router/ProfessorRoutes";
 import MainLayout from "./components/layouts/MainLayout";
 
 function App() {
@@ -27,6 +28,8 @@ function App() {
   // Componentes de Alumno
   const MyPayments = lazy(() => import("./views/student/MyPayments"));
   const MyCareers = lazy(() => import("./views/student/MyCareers"));
+  // Componentes de Profesor
+  const ProfessorDashboard = lazy(() => import("./views/professor/ProfessorCareers"));
 
   return (
     <BrowserRouter>
@@ -59,6 +62,9 @@ function App() {
             <Route element={<StudentRoutes />}>
               <Route path="/my-payments" element={<MyPayments />} />
               <Route path="/my-careers" element={<MyCareers />} />
+            </Route>
+            <Route element={<ProfessorRoutes />}>
+              <Route path="/professor/dashboard" element={<ProfessorDashboard />} />
             </Route>
           </Route>
         </Route>

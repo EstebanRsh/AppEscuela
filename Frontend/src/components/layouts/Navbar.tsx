@@ -9,6 +9,7 @@ const Navbar = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = user && user.type === "administrador";
   const isStudent = user.type === "alumno";
+  const isProfessor = user.type === "profesor"; 
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -150,6 +151,20 @@ const Navbar = () => {
                   </NavLink>
                 </li>
               </>
+            )}
+            {isProfessor && (
+              <li className="nav-item">
+                <NavLink
+                  className="nav-link"
+                  to="/professor/dashboard"
+                  style={({ isActive }) =>
+                    isActive ? activeLinkStyle : undefined
+                  }
+                  onClick={closeNavbarCollapse}
+                >
+                  Dashboard 
+                </NavLink>
+              </li>
             )}
           </ul>
 
