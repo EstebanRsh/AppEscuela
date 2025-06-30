@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Header
 from fastapi.responses import JSONResponse
-from models.modelo import Career, InputCareer, session, User
+from models.modelo import Career, InputCareer, session, User, PivoteUserCareer
 from auth.security import Security
 
 career = APIRouter()
@@ -122,5 +122,53 @@ def delete_career(career_id: int, authorization: str | None = Header(default=Non
         # Este error puede ocurrir si un alumno está inscrito en la carrera que intentas borrar.
         print("Error al eliminar carrera:", e)
         return JSONResponse(status_code=409, content={"message": f"Error: No se puede eliminar la carrera, es posible que esté en uso."})
+    finally:
+        db_session.close()
+
+@career.get("/career/{career_id}/students")
+def get_students_in_career(career_id: int, authorization: str | None = Header(default=None)):
+    """
+    Obtiene todos los alumnos inscritos en una carrera específica.
+    Solo para administradores.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data:
+        return JSONResponse(status_code=401, content={"message": "Token inválido."})
+
+    db_session = session
+    try:
+        # Verificamos que el que pide es admin
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+
+        # Buscamos la carrera para asegurarnos de que existe
+        career_info = db_session.query(Career).filter(Career.id == career_id).first()
+        if not career_info:
+            return JSONResponse(status_code=404, content={"message": "Carrera no encontrada."})
+
+        # Buscamos todas las inscripciones para esa carrera
+        enrollments = db_session.query(PivoteUserCareer).filter(PivoteUserCareer.id_career == career_id).all()
+        
+        # Preparamos la lista de alumnos
+        student_list = []
+        for enrollment in enrollments:
+            # Nos aseguramos de que el usuario sea un alumno
+            if enrollment.user and enrollment.user.userdetail and enrollment.user.userdetail.type == 'alumno':
+                student_data = {
+                    "id": enrollment.user.id,
+                    "first_name": enrollment.user.userdetail.first_name,
+                    "last_name": enrollment.user.userdetail.last_name,
+                    "email": enrollment.user.userdetail.email,
+                    "dni": enrollment.user.userdetail.dni
+                }
+                student_list.append(student_data)
+        
+        return {"career": career_info.name, "students": student_list}
+
+    except Exception as e:
+        db_session.rollback()
+        return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
     finally:
         db_session.close()

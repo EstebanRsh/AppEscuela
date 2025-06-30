@@ -12,6 +12,7 @@ function App() {
   const Dashboard = lazy(() => import("./views/Dashboard"));
   const Notifications = lazy(() => import("./views/Notifications"));
   const Profile = lazy(() => import("./views/Profile"));
+  
   // Componentes de Administrador
   const UsersDashboard = lazy(() => import("./views/admin/UsersDashboard"));
   const Signup = lazy(() => import("./views/admin/Signup"));
@@ -22,6 +23,8 @@ function App() {
   const CareersDashboard = lazy(() => import("./views/admin/CareersDashboard"));
   const CareerAdd = lazy(() => import("./views/admin/CareerAdd"));
   const CareerEdit = lazy(() => import("./views/admin/CareerEdit"));
+  const CareerEnrollments = lazy(() => import("./views/admin/CareerEnrollments"));
+  
   // Componentes de Alumno
   const MyPayments = lazy(() => import("./views/student/MyPayments"));
   const MyCareers = lazy(() => import("./views/student/MyCareers"));
@@ -35,22 +38,29 @@ function App() {
         </Route>
         <Route element={<ProtectedRoutes />}>
           <Route element={<MainLayout />}>
+            {/* Rutas Generales */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />
-              <Route element={<AdminRoutes />}>
-                <Route path="/users" element={<UsersDashboard />} />
-                <Route path="/payments" element={<PaymentsDashboard />} />
-                <Route path="/careers" element={<CareersDashboard />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/user/edit/:userId" element={<UserEdit />} />
-                <Route path="/payment/add" element={<PaymentAdd />} />
-                <Route path="/payment/edit/:paymentId"element={<PaymentEdit />}/></Route>
-                <Route path="/career/add" element={<CareerAdd />} />
-                <Route path="/career/edit/:careerId" element={<CareerEdit />} />
-                <Route element={<StudentRoutes />}>
-                  <Route path="/my-payments" element={<MyPayments />} />
-                  <Route path="/my-careers" element={<MyCareers />} />
+            
+            {/* Rutas de Administrador */}
+            <Route element={<AdminRoutes />}>
+              <Route path="/users" element={<UsersDashboard />} />
+              <Route path="/payments" element={<PaymentsDashboard />} />
+              <Route path="/careers" element={<CareersDashboard />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/user/edit/:userId" element={<UserEdit />} />
+              <Route path="/payment/add" element={<PaymentAdd />} />
+              <Route path="/payment/edit/:paymentId" element={<PaymentEdit />}/>
+              <Route path="/career/add" element={<CareerAdd />} />
+              <Route path="/career/edit/:careerId" element={<CareerEdit />} />
+              <Route path="/career-enrollments" element={<CareerEnrollments />} />
+            </Route>
+            
+            {/* Rutas de Estudiante */}
+            <Route element={<StudentRoutes />}>
+              <Route path="/my-payments" element={<MyPayments />} />
+              <Route path="/my-careers" element={<MyCareers />} />
             </Route>
           </Route>
         </Route>

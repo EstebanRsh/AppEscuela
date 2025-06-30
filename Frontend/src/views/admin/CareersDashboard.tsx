@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import InfoContainer from '../../components/common/InfoContainer';
+import InfoContainer from "../../components/common/InfoContainer";
 
 // Definimos el tipo para una Carrera
 type Career = {
@@ -21,7 +21,7 @@ function CareersDashboard() {
 
     try {
       const res = await fetch(CAREERS_URL, {
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -35,7 +35,9 @@ function CareersDashboard() {
       }
     } catch (err: any) {
       console.error("Error fetching careers:", err);
-      setMessage(err.message || "No se pudieron obtener los datos del servidor.");
+      setMessage(
+        err.message || "No se pudieron obtener los datos del servidor."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -45,80 +47,102 @@ function CareersDashboard() {
     fetchCareers();
   }, []);
 
-return (
-  <InfoContainer>
-    <div className="container mt-4">
-      <div className="card card-custom shadow-lg">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h1 className="m-0 h3">
-            <i className="bi bi-diagram-3-fill text-warning me-2"></i>
-            Gestión de Carreras
-          </h1>
-          <Link to="/career/add" className="btn btn-outline-success d-flex align-items-center">
-            <i className="bi bi-plus-lg me-2"></i>
-            Añadir Carrera
-          </Link>
-        </div>
-        <div className="card-body">
-          <p className="lead mb-4">
-            Aquí puedes ver, crear y administrar las carreras del sistema.
-          </p>
-
-          {message && <div className="alert alert-danger">{message}</div>}
-          
-          {isLoading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-warning" role="status">
-                <span className="visually-hidden">Cargando...</span>
-              </div>
-              <p className="mt-2">Cargando carreras...</p>
+  return (
+    <InfoContainer>
+      <div className="container mt-4">
+        <div className="card card-custom shadow-lg">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <h1 className="m-0 h3">
+              <i className="bi bi-diagram-3-fill text-warning me-2"></i>
+              Gestión de Carreras
+            </h1>
+            <div className="d-flex gap-2">
+              <Link
+                to="/career-enrollments"
+                className="btn btn-outline-info d-flex align-items-center"
+              >
+                <i className="bi bi-search me-2"></i>
+                Consultar Inscritos
+              </Link>
+              <Link
+                to="/career/add"
+                className="btn btn-outline-success d-flex align-items-center"
+              >
+                <i className="bi bi-plus-lg me-2"></i>
+                Añadir Carrera
+              </Link>
             </div>
-          ) : (
-            <div className="table-responsive">
-              {/* Se añade la clase 'table-responsive-cards' */}
-              <table className="table table-hover align-middle table-responsive-cards">
-                <thead>
-                  <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">NOMBRE DE LA CARRERA</th>
-                    <th scope="col" className="text-end">ACCIONES</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {careers.length > 0 ? (
-                    careers.map((career) => (
-                      <tr key={career.id}>
-                        {/* Se añaden los 'data-label' */}
-                        <td data-label="ID">{career.id}</td>
-                        <td data-label="Nombre">{career.name}</td>
-                        <td data-label="Acciones" className="text-end actions-cell">
-                          <Link to={`/career/edit/${career.id}`} className="btn btn-outline-primary btn-sm">
+          </div>
+          <div className="card-body">
+            <p className="lead mb-4">
+              Aquí puedes ver, crear y administrar las carreras del sistema.
+            </p>
+
+            {message && <div className="alert alert-danger">{message}</div>}
+
+            {isLoading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-warning" role="status">
+                  <span className="visually-hidden">Cargando...</span>
+                </div>
+                <p className="mt-2">Cargando carreras...</p>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                {/* Se añade la clase 'table-responsive-cards' */}
+                <table className="table table-hover align-middle table-responsive-cards">
+                  <thead>
+                    <tr>
+                      <th scope="col">ID</th>
+                      <th scope="col">NOMBRE DE LA CARRERA</th>
+                      <th scope="col" className="text-end">
+                        ACCIONES
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {careers.length > 0 ? (
+                      careers.map((career) => (
+                        <tr key={career.id}>
+                          {/* Se añaden los 'data-label' */}
+                          <td data-label="ID">{career.id}</td>
+                          <td data-label="Nombre">{career.name}</td>
+                          <td
+                            data-label="Acciones"
+                            className="text-end actions-cell"
+                          >
+                            <Link
+                              to={`/career/edit/${career.id}`}
+                              className="btn btn-outline-primary btn-sm"
+                            >
                               <i className="bi bi-pencil-square me-1"></i>
                               Editar
-                          </Link>
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3}>
+                          <div className="empty-state">
+                            <i className="bi bi-exclamation-circle-fill"></i>
+                            <h4 className="mt-3">
+                              No hay carreras para mostrar
+                            </h4>
+                            <p>¡Comienza añadiendo la primera carrera!</p>
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={3}>
-                        <div className="empty-state">
-                          <i className="bi bi-exclamation-circle-fill"></i>
-                          <h4 className="mt-3">No hay carreras para mostrar</h4>
-                          <p>¡Comienza añadiendo la primera carrera!</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  </InfoContainer>
-);
+    </InfoContainer>
+  );
 }
 
 export default CareersDashboard;
