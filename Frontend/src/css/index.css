@@ -377,3 +377,8 @@ body {
   color: rgba(255, 255, 255, 0.5);
   min-height: 150px; /* Asegura una altura mínima decente */
 }
+/* Añade esto a tu archivo index.css si no existe */
+.accordion-header {
+  cursor: pointer;
+  padding: 0.5rem 0;
+}

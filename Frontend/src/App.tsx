@@ -23,7 +23,6 @@ function App() {
   const CareersDashboard = lazy(() => import("./views/admin/CareersDashboard"));
   const CareerAdd = lazy(() => import("./views/admin/CareerAdd"));
   const CareerEdit = lazy(() => import("./views/admin/CareerEdit"));
-  const CareerEnrollments = lazy(() => import("./views/admin/CareerEnrollments"));
   
   // Componentes de Alumno
   const MyPayments = lazy(() => import("./views/student/MyPayments"));
@@ -54,7 +53,6 @@ function App() {
               <Route path="/payment/edit/:paymentId" element={<PaymentEdit />}/>
               <Route path="/career/add" element={<CareerAdd />} />
               <Route path="/career/edit/:careerId" element={<CareerEdit />} />
-              <Route path="/career-enrollments" element={<CareerEnrollments />} />
             </Route>
             
             {/* Rutas de Estudiante */}

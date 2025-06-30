@@ -66,13 +66,6 @@ function UsersDashboard() {
             {isAdmin && (
               <div className="d-flex gap-2">
                 <Link
-                  to="/enroll-student"
-                  className="btn btn-outline-primary d-flex align-items-center"
-                >
-                  <i className="bi bi-person-check-fill me-2"></i>
-                  Inscribir Alumno
-                </Link>
-                <Link
                   to="/signup"
                   className="btn btn-outline-success d-flex align-items-center"
                 >

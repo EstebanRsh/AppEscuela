@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
 
 // --- TIPOS DE DATOS ---
-// Usaremos estos tipos para tener un código más claro y seguro.
 type UserDataType = {
   first_name: string;
   last_name: string;
@@ -27,7 +26,6 @@ function UserEdit() {
   const navigate = useNavigate();
 
   // --- ESTADOS ---
-  // Se inicializa con valores por defecto para evitar errores de renderizado.
   const [formData, setFormData] = useState<UserDataType>({
     first_name: "",
     last_name: "",
@@ -48,21 +46,24 @@ function UserEdit() {
   const [passwordMatchError, setPasswordMatchError] = useState('');
   const [resetPasswordMessage, setResetPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
+  // Estados para controlar la visibilidad de las secciones colapsables
+  const [isCareersVisible, setIsCareersVisible] = useState(true);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
   // Estado para mensajes generales
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Un solo objeto para manejar todos los estados de carga
+  // Estado unificado para cargas
   const [isLoading, setIsLoading] = useState({
     page: true,
     update: false,
     delete: false,
     enroll: false,
-    unenroll: null as number | null, // Guarda el ID de la carrera que se está eliminando
+    unenroll: null as number | null,
     resetPass: false
   });
 
   // --- EFECTOS ---
-  // Carga todos los datos necesarios al iniciar el componente
   useEffect(() => {
     const token = localStorage.getItem("token") || "";
     const headers = { Authorization: `Bearer ${token}` };
@@ -74,9 +75,8 @@ function UserEdit() {
         if (!userRes.ok) throw new Error((await userRes.json()).message || "Error al cargar el usuario.");
         
         const userData = await userRes.json();
-        setFormData({ ...userData, dni: String(userData.dni) }); // Actualiza el estado del formulario
+        setFormData({ ...userData, dni: String(userData.dni) });
         
-        // Ahora que tenemos el username, buscamos el resto de la información
         const [allCareersRes, userCareersRes] = await Promise.all([
           fetch("http://localhost:8000/career/all", { headers }),
           fetch(`http://localhost:8000/user/career/${userData.username}`, { headers })
@@ -94,7 +94,6 @@ function UserEdit() {
     fetchData();
   }, [userId]);
 
-  // Valida la coincidencia de contraseñas en tiempo real
   useEffect(() => {
     setPasswordMatchError(
       resetPassword && confirmResetPassword && resetPassword !== confirmResetPassword 
@@ -138,7 +137,7 @@ function UserEdit() {
     const token = localStorage.getItem("token") || "";
     try {
       const response = await fetch(`http://localhost:8000/user/delete/${userId}`, {
-        method: "DELETE", // Corregido a DELETE, el método HTTP estándar para borrar.
+        method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await response.json();
@@ -243,7 +242,7 @@ function UserEdit() {
           </div>
           <div className="card-body p-4">
             <form onSubmit={handleUpdate} noValidate>
-              <h2 className="lead fs-4 mb-4">Modificando datos de: <span className="fw-bold">{formData.first_name} {formData.last_name}</span></h2>
+              <h2 className="lead fs-4 mb-4">Datos de: <span className="fw-bold">{formData.first_name} {formData.last_name}</span></h2>
               <div className="row g-3">
                 <div className="col-md-6"><label htmlFor="first_name">Nombre</label><input type="text" id="first_name" className="form-control" value={formData.first_name} onChange={handleInputChange} required /></div>
                 <div className="col-md-6"><label htmlFor="last_name">Apellido</label><input type="text" id="last_name" className="form-control" value={formData.last_name} onChange={handleInputChange} required /></div>
@@ -256,49 +255,66 @@ function UserEdit() {
               </div>
             </form>
 
+            {/* SECCIÓN COLAPSABLE DE CARRERAS */}
             {(formData.type === 'alumno' || formData.type === 'profesor') && (
               <>
                 <hr className="hr-custom my-4" />
-                <h4 className="mb-3">Gestión de Carreras Asignadas</h4>
-                <div className="row g-4">
-                  <div className="col-md-6">
-                    <h5>Carreras Actuales ({userCareers.length})</h5>
-                    {userCareers.length > 0 ? (
-                      <ul className="list-group">{userCareers.map(c => <li key={c.carrera} className="list-group-item list-group-item-dark d-flex justify-content-between align-items-center">{c.carrera}<button className="btn btn-outline-danger btn-sm" onClick={() => handleUnenroll(c.carrera)} disabled={isLoading.unenroll === allCareers.find(ac => ac.name === c.carrera)?.id}>{isLoading.unenroll === allCareers.find(ac => ac.name === c.carrera)?.id ? <span className="spinner-border spinner-border-sm"></span> : <i className="bi bi-trash"></i>}</button></li>)}</ul>
-                    ) : ( <div className="alert alert-secondary p-2">No tiene carreras asignadas.</div> )}
-                  </div>
-                  <div className="col-md-6">
-                    <h5>Asignar Nueva Carrera</h5>
-                    {availableCareers.length > 0 ? (
-                      <form onSubmit={handleEnroll}>
-                        <div className="input-group">
-                          <select className="form-select" value={selectedNewCareer} onChange={e => setSelectedNewCareer(e.target.value)} required><option value="" disabled>Seleccionar...</option>{availableCareers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-                          <button type="submit" className="btn btn-outline-info" disabled={isLoading.enroll}>{isLoading.enroll ? '...' : 'Asignar'}</button>
-                        </div>
-                      </form>
-                    ) : ( <div className="alert alert-info p-2">¡Ya está en todas las carreras!</div> )}
+                <div className="accordion-header" onClick={() => setIsCareersVisible(!isCareersVisible)} style={{cursor: 'pointer'}}>
+                  <h4 className="mb-0 d-flex justify-content-between align-items-center">
+                    Gestión de Carreras Asignadas
+                    <i className={`bi ${isCareersVisible ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+                  </h4>
+                </div>
+                <div className={`collapse ${isCareersVisible ? 'show' : ''} mt-3`}>
+                  <div className="row g-4">
+                    <div className="col-md-6">
+                      <h5>Carreras Actuales ({userCareers.length})</h5>
+                      {userCareers.length > 0 ? (
+                        <ul className="list-group">{userCareers.map(c => <li key={c.carrera} className="list-group-item list-group-item-dark d-flex justify-content-between align-items-center">{c.carrera}<button className="btn btn-outline-danger btn-sm" onClick={() => handleUnenroll(c.carrera)} disabled={isLoading.unenroll === allCareers.find(ac => ac.name === c.carrera)?.id}>{isLoading.unenroll === allCareers.find(ac => ac.name === c.carrera)?.id ? <span className="spinner-border spinner-border-sm"></span> : <i className="bi bi-trash"></i>}</button></li>)}</ul>
+                      ) : ( <div className="alert alert-secondary p-2">No tiene carreras asignadas.</div> )}
+                    </div>
+                    <div className="col-md-6">
+                      <h5>Inscribir a una carrera</h5>
+                      {availableCareers.length > 0 ? (
+                        <form onSubmit={handleEnroll}>
+                          <div className="input-group">
+                            <select className="form-select" value={selectedNewCareer} onChange={e => setSelectedNewCareer(e.target.value)} required><option value="" disabled>Seleccionar...</option>{availableCareers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+                            <button type="submit" className="btn btn-outline-info" disabled={isLoading.enroll}>{isLoading.enroll ? '...' : 'Asignar'}</button>
+                          </div>
+                        </form>
+                      ) : ( <div className="alert alert-info p-2">¡Ya está en todas las carreras!</div> )}
+                    </div>
                   </div>
                 </div>
               </>
             )}
 
+            {/* SECCIÓN COLAPSABLE DE CONTRASEÑA */}
             <hr className="hr-custom my-4" />
-            <h4 className="mb-3">Restablecer Contraseña</h4>
-            <form onSubmit={handleResetPassword}>
-                <div className="row g-3">
-                    <div className="col-md-6"><label htmlFor="resetPassword">Nueva Contraseña</label><input type="password" id="resetPassword" className={`form-control ${passwordMatchError ? 'is-invalid' : ''}`} value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} required /></div>
-                    <div className="col-md-6"><label htmlFor="confirmResetPassword">Confirmar Contraseña</label><input type="password" id="confirmResetPassword" className={`form-control ${passwordMatchError ? 'is-invalid' : ''}`} value={confirmResetPassword} onChange={(e) => setConfirmResetPassword(e.target.value)} required />{passwordMatchError && <div className="invalid-feedback">{passwordMatchError}</div>}</div>
-                </div>
-                <div className="d-flex justify-content-end mt-3"><button type="submit" className="btn btn-outline-warning" disabled={isLoading.resetPass || !!passwordMatchError}>{isLoading.resetPass ? 'Restableciendo...' : 'Restablecer'}</button></div>
-            </form>
-            {resetPasswordMessage && <div className={`alert small mt-3 py-2 alert-${resetPasswordMessage.type}`}>{resetPasswordMessage.text}</div>}
+             <div className="accordion-header" onClick={() => setIsPasswordVisible(!isPasswordVisible)} style={{cursor: 'pointer'}}>
+                <h4 className="mb-0 d-flex justify-content-between align-items-center">
+                  Restablecer Contraseña
+                  <i className={`bi ${isPasswordVisible ? 'bi-chevron-up' : 'bi-chevron-down'}`}></i>
+                </h4>
+             </div>
+            <div className={`collapse ${isPasswordVisible ? 'show' : ''} mt-3`}>
+              <form onSubmit={handleResetPassword}>
+                  <div className="row g-3">
+                      <div className="col-md-6"><label htmlFor="resetPassword">Nueva Contraseña</label><input type="password" id="resetPassword" className={`form-control ${passwordMatchError ? 'is-invalid' : ''}`} value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} required /></div>
+                      <div className="col-md-6"><label htmlFor="confirmResetPassword">Confirmar Contraseña</label><input type="password" id="confirmResetPassword" className={`form-control ${passwordMatchError ? 'is-invalid' : ''}`} value={confirmResetPassword} onChange={(e) => setConfirmResetPassword(e.target.value)} required />{passwordMatchError && <div className="invalid-feedback">{passwordMatchError}</div>}</div>
+                  </div>
+                  <div className="d-flex justify-content-end mt-3"><button type="submit" className="btn btn-outline-warning" disabled={isLoading.resetPass || !!passwordMatchError}>{isLoading.resetPass ? 'Restableciendo...' : 'Restablecer'}</button></div>
+              </form>
+              {resetPasswordMessage && <div className={`alert small mt-3 py-2 alert-${resetPasswordMessage.type}`}>{resetPasswordMessage.text}</div>}
+            </div>
+
 
             {message && <div className={`alert mt-4 ${message.type === "success" ? "alert-success" : "alert-danger"}`}>{message.text}</div>}
             
             <hr className="hr-custom my-4" />
             <div className="d-flex justify-content-between mt-4">
-              <button type="button" className="btn btn-outline-danger" onClick={handleDelete} disabled={isLoading.delete}>{isLoading.delete ? <span className="spinner-border spinner-border-sm me-2"></span> : <i className="bi bi-trash-fill me-2"></i>}Eliminar</button>
-              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/users")}>Cancelar</button>
+              <button type="button" className="btn btn-outline-danger" onClick={handleDelete} disabled={isLoading.delete}>{isLoading.delete ? <span className="spinner-border spinner-border-sm me-2"></span> : <i className="bi bi-trash-fill me-2"></i>}Eliminar Usuario</button>
+              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/users")}>Volver a Usuarios</button>
             </div>
           </div>
         </div>
