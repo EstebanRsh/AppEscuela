@@ -128,6 +128,18 @@ const Navbar = () => {
                 <li className="nav-item">
                   <NavLink
                     className="nav-link"
+                    to="/my-careers"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Mis Carreras
+                  </NavLink>
+                </li>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
                     to="/notifications"
                     style={({ isActive }) =>
                       isActive ? activeLinkStyle : undefined
