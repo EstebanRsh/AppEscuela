@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
 
 // --- TIPOS DE DATOS ---
-// Usaremos estos tipos para tener un código más claro y seguro.
 type UserDataType = {
   first_name: string;
   last_name: string;
@@ -27,42 +26,25 @@ function UserEdit() {
   const navigate = useNavigate();
 
   // --- ESTADOS ---
-  // Se inicializa con valores por defecto para evitar errores de renderizado.
-  const [formData, setFormData] = useState<UserDataType>({
-    first_name: "",
-    last_name: "",
-    email: "",
-    type: "alumno",
-    dni: "",
-    username: ""
-  });
-
-  // Estados para la gestión de carreras
+  const [formData, setFormData] = useState<UserDataType | null>(null);
   const [userCareers, setUserCareers] = useState<UserCareer[]>([]);
   const [allCareers, setAllCareers] = useState<AllCareers[]>([]);
   const [selectedNewCareer, setSelectedNewCareer] = useState('');
-
-  // Estados para el restablecimiento de contraseña
   const [resetPassword, setResetPassword] = useState('');
   const [confirmResetPassword, setConfirmResetPassword] = useState('');
   const [passwordMatchError, setPasswordMatchError] = useState('');
   const [resetPasswordMessage, setResetPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
-
-  // Estado para mensajes generales
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
-  // Un solo objeto para manejar todos los estados de carga
   const [isLoading, setIsLoading] = useState({
     page: true,
     update: false,
     delete: false,
     enroll: false,
-    unenroll: null as number | null, // Guarda el ID de la carrera que se está eliminando
+    unenroll: null as number | null,
     resetPass: false
   });
 
   // --- EFECTOS ---
-  // Carga todos los datos necesarios al iniciar el componente
   useEffect(() => {
     const token = localStorage.getItem("token") || "";
     const headers = { Authorization: `Bearer ${token}` };
@@ -74,16 +56,26 @@ function UserEdit() {
         if (!userRes.ok) throw new Error((await userRes.json()).message || "Error al cargar el usuario.");
         
         const userData = await userRes.json();
-        setFormData({ ...userData, dni: String(userData.dni) }); // Actualiza el estado del formulario
+        setFormData({ ...userData, dni: String(userData.dni) });
         
-        // Ahora que tenemos el username, buscamos el resto de la información
         const [allCareersRes, userCareersRes] = await Promise.all([
           fetch("http://localhost:8000/career/all", { headers }),
           fetch(`http://localhost:8000/user/career/${userData.username}`, { headers })
         ]);
 
         if (allCareersRes.ok) setAllCareers(await allCareersRes.json());
-        if (userCareersRes.ok) setUserCareers(await userCareersRes.json());
+        
+        // --- LA CORRECCIÓN ESTÁ AQUÍ ---
+        // Verificamos si la respuesta de las carreras del usuario es un array antes de guardarla.
+        if (userCareersRes.ok) {
+          const userCareersData = await userCareersRes.json();
+          if (Array.isArray(userCareersData)) {
+            setUserCareers(userCareersData);
+          } else {
+            setUserCareers([]); // Si no es un array, lo forzamos a ser un array vacío.
+          }
+        }
+        // --- FIN DE LA CORRECCIÓN ---
 
       } catch (err: any) {
         setMessage({ type: "error", text: err.message });
@@ -94,7 +86,6 @@ function UserEdit() {
     fetchData();
   }, [userId]);
 
-  // Valida la coincidencia de contraseñas en tiempo real
   useEffect(() => {
     setPasswordMatchError(
       resetPassword && confirmResetPassword && resetPassword !== confirmResetPassword 
@@ -106,11 +97,14 @@ function UserEdit() {
   // --- MANEJADORES DE EVENTOS ---
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
-    setFormData(prevData => ({ ...prevData, [id]: value }));
+    if (formData) {
+      setFormData(prevData => ({ ...prevData!, [id]: value }));
+    }
   };
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!formData) return;
     setIsLoading(prev => ({ ...prev, update: true }));
     setMessage(null);
     const token = localStorage.getItem("token") || "";
@@ -132,13 +126,13 @@ function UserEdit() {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(`¿Seguro que quieres eliminar a ${formData.first_name}? Esta acción es irreversible.`)) return;
+    if (!formData || !window.confirm(`¿Seguro que quieres eliminar a ${formData.first_name}? Esta acción es irreversible.`)) return;
     setIsLoading(prev => ({ ...prev, delete: true }));
     setMessage(null);
     const token = localStorage.getItem("token") || "";
     try {
       const response = await fetch(`http://localhost:8000/user/delete/${userId}`, {
-        method: "DELETE", // Corregido a DELETE, el método HTTP estándar para borrar.
+        method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       const result = await response.json();
@@ -232,15 +226,18 @@ function UserEdit() {
     return <InfoContainer><div className="text-center p-5"><div className="spinner-border text-warning"></div></div></InfoContainer>;
   }
 
+  // Protección para el renderizado inicial, en caso de que formData aún no esté listo.
+  if (!formData) {
+    return <InfoContainer><div className="alert alert-danger m-4">{message?.text || "No se pudieron cargar los datos del usuario."}</div></InfoContainer>;
+  }
+
   const availableCareers = allCareers.filter(c => !userCareers.some(uc => uc.carrera === c.name));
 
   return (
     <InfoContainer>
       <div className="container mt-4">
         <div className="card card-custom shadow-lg mx-auto" style={{ maxWidth: "800px" }}>
-          <div className="card-header">
-            <h1 className="m-0 h3"><i className="bi bi-pencil-square text-warning me-2"></i>Editando Perfil de Usuario</h1>
-          </div>
+          <div className="card-header"><h1 className="m-0 h3"><i className="bi bi-pencil-square text-warning me-2"></i>Editando Perfil de Usuario</h1></div>
           <div className="card-body p-4">
             <form onSubmit={handleUpdate} noValidate>
               <h2 className="lead fs-4 mb-4">Modificando datos de: <span className="fw-bold">{formData.first_name} {formData.last_name}</span></h2>
@@ -292,7 +289,7 @@ function UserEdit() {
                 <div className="d-flex justify-content-end mt-3"><button type="submit" className="btn btn-outline-warning" disabled={isLoading.resetPass || !!passwordMatchError}>{isLoading.resetPass ? 'Restableciendo...' : 'Restablecer'}</button></div>
             </form>
             {resetPasswordMessage && <div className={`alert small mt-3 py-2 alert-${resetPasswordMessage.type}`}>{resetPasswordMessage.text}</div>}
-
+            
             {message && <div className={`alert mt-4 ${message.type === "success" ? "alert-success" : "alert-danger"}`}>{message.text}</div>}
             
             <hr className="hr-custom my-4" />

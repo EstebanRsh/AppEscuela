@@ -9,6 +9,7 @@ type User = {
   last_name: string;
   type: string;
   email: string;
+  careers: string[];
 };
 
 function UsersDashboard() {
@@ -106,6 +107,7 @@ function UsersDashboard() {
                       <th>APELLIDO</th>
                       <th>TIPO</th>
                       <th>EMAIL</th>
+                      <th>CARRERAS</th>
                       {isAdmin && <th className="text-end">ACCIONES</th>}
                     </tr>
                   </thead>
@@ -118,6 +120,20 @@ function UsersDashboard() {
                           <td data-label="Apellido">{user_item.last_name}</td>
                           <td data-label="Tipo">{user_item.type}</td>
                           <td data-label="Email">{user_item.email}</td>
+                          <td data-label="Carreras">
+                            {user_item.careers.length > 0 ? (
+                              user_item.careers.map((career, index) => (
+                                <span
+                                  key={index}
+                                  className="badge bg-secondary me-1"
+                                >
+                                  {career}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-white-50">--</span>
+                            )}
+                          </td>
                           {isAdmin && (
                             <td
                               data-label="Acciones"

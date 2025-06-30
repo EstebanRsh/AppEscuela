@@ -2,7 +2,7 @@ from sqlalchemy.exc import IntegrityError
 from fastapi import APIRouter, Request, Header, File, UploadFile
 from fastapi.responses import JSONResponse
 from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer, InputUserUpdate, InputPasswordChange, InputAdminPasswordReset
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, subqueryload
 from auth.security import Security
 import shutil
 import os
@@ -13,50 +13,41 @@ user = APIRouter()
 
 
 @user.get("/")
-### funcion helloUer documentacion
 def helloUser():
     return "Hello User!!!"
 
 @user.get("/users/all")
-### funcion helloUer documentacion
 def getAllUsers(req: Request):
     try:
         has_access = Security.verify_token(req.headers)
-        if "iat" in has_access:
-            usersWithDetail = session.query(User).options(joinedload(User.userdetail)).all()
-            usuarios_con_detalle = []
-            for user in usersWithDetail:
-                user_con_detalle = {
-                    "id": user.id,
-                    "username": user.username,
-                    "password": user.password,
-                    "first_name": user.userdetail.first_name,
-                    "last_name": user.userdetail.last_name,
-                    "dni": user.userdetail.dni,
-                    "type": user.userdetail.type,
-                    "email": user.userdetail.email,
-                }
-                usuarios_con_detalle.append(user_con_detalle)
-            return JSONResponse(status_code=200, content=usuarios_con_detalle)
-        else: 
-            return JSONResponse(
-                status_code=401,
-                content=has_access
-            )
+        if "iat" not in has_access:
+            return JSONResponse(status_code=401, content=has_access)
+        
+        users_query = session.query(User).options(
+            joinedload(User.userdetail),
+            subqueryload(User.pivoteusercareer).joinedload(PivoteUserCareer.career)
+        ).all()
+        
+        result_list = []
+        for user_item in users_query:
+            user_careers = [p.career.name for p in user_item.pivoteusercareer if p.career]
+            result_list.append({
+                "id": user_item.id,
+                "username": user_item.username,
+                "first_name": user_item.userdetail.first_name,
+                "last_name": user_item.userdetail.last_name,
+                "dni": user_item.userdetail.dni,
+                "type": user_item.userdetail.type,
+                "email": user_item.userdetail.email,
+                "careers": user_careers
+            })
+        return JSONResponse(status_code=200, content=result_list)
+
     except Exception as ex:
-        print("Error ---->> ", ex)
-        return {"message": "Error al obtener los usuarios"}
-    
-@user.get("/users/{us}/{pw}")
-### funcion helloUer documentacion
-def loginUser(us:str, pw:str):
-    usu = session.query(User).filter(User.username==us).first()
-    if usu is None:
-        return "Usuario no encontrado!"
-    if usu.password==pw: 
-        return "Usuario logueado con éxito!"
-    else:
-        return "Contraseña incorrecta!"
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"message": "Error interno al obtener los usuarios"})
+    finally:
+        session.close()
 
 @user.post("/users/add")
 def create_user(us: InputUser, authorization: str | None = Header(default=None)):
@@ -137,7 +128,6 @@ def upload_profile_photo(authorization: str | None = Header(default=None), file:
         return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
     finally:
         db_session.close()
-       
 @user.post("/users/login")
 def login_user(us: InputLogin):
     try:
@@ -175,10 +165,7 @@ def login_user(us: InputLogin):
         print("Error ---->> ", ex)
         return JSONResponse(status_code=500, content={"message":"Error interno en el servidor."})
     finally:
-        session.close()
-
-
-## Inscribir un alumno a una carrera      
+        session.close()   
 @user.post("/user/addcareer")
 def addCareer(ins: InputUserAddCareer, authorization: str | None = Header(default=None)):
     """
@@ -207,29 +194,52 @@ def addCareer(ins: InputUserAddCareer, authorization: str | None = Header(defaul
         return JSONResponse(status_code=500, content={"message": "Error interno al procesar la inscripción."})
     finally:
         db_session.close()
-
 @user.get("/user/career/{_username}")
 def get_career_user(_username: str):
+    db_session = session
     try:
-        userEncontrado = session.query(User).filter(User.username == _username ).first()
-        arraySalida = []
-        if(userEncontrado):
-            pivoteusercareer = userEncontrado.pivoteusercareer
-            for pivote in pivoteusercareer:
-                career_detail = {
-                    "usuario": f"{pivote.user.userdetail.first_name} {pivote.user.userdetail.last_name}",
-                    "carrera": pivote.career.name,
-                }
-                arraySalida.append(career_detail)
-            return arraySalida
-        else:
-            return "Usuario no encontrado!"
-    except Exception as ex:
-        session.rollback()
-        print("Error al traer usuario y/o pagos")
+        user_found = db_session.query(User).filter(User.username == _username).first()
+        if not user_found:
+            return JSONResponse(status_code=404, content=[]) # Devuelve array vacío si no se encuentra
+        
+        # Devuelve siempre un array, incluso si está vacío.
+        user_careers = [{"carrera": p.career.name} for p in user_found.pivoteusercareer if p.career]
+        return user_careers
+    except Exception:
+        return JSONResponse(status_code=500, content={"message": "Error al traer las carreras del usuario"})
     finally:
-        session.close()
+        db_session.close()
 
+# --- RUTAS DE GESTIÓN DE CARRERAS (Refactorizadas y funcionales) ---
+
+@user.post("/users/{user_id}/careers")
+def assign_career_to_user(user_id: int, career_data: dict, authorization: str | None = Header(default=None)):
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data: return JSONResponse(status_code=401, content={"message": "Token inválido."})
+    
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+
+        career_id = career_data.get("id")
+        if not career_id: return JSONResponse(status_code=400, content={"message": "Falta el ID de la carrera."})
+
+        existing = db_session.query(PivoteUserCareer).filter_by(id_user=user_id, id_career=career_id).first()
+        if existing: return JSONResponse(status_code=409, content={"message": "El usuario ya está inscrito en esta carrera."})
+
+        new_enrollment = PivoteUserCareer(id_user=user_id, id_career=career_id)
+        db_session.add(new_enrollment)
+        db_session.commit()
+        return JSONResponse(status_code=201, content={"message": "Carrera asignada con éxito."})
+
+    except Exception:
+        db_session.rollback()
+        return JSONResponse(status_code=500, content={"message": "Error interno al asignar la carrera."})
+    finally:
+        db_session.close()
 @user.get("/user/{user_id}")
 def get_user_by_id(user_id: int, authorization: str | None = Header(default=None)):
     """
@@ -264,7 +274,8 @@ def get_user_by_id(user_id: int, authorization: str | None = Header(default=None
             "last_name": user_data.userdetail.last_name,
             "dni": user_data.userdetail.dni,
             "type": user_data.userdetail.type,
-            "email": user_data.userdetail.email
+            "email": user_data.userdetail.email,
+            "username": user_data.username
         }
         return JSONResponse(status_code=200, content=user_details)
 
@@ -274,7 +285,6 @@ def get_user_by_id(user_id: int, authorization: str | None = Header(default=None
         return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
     finally:
         db_session.close()  
-
 @user.put("/user/update/{user_id}")
 def update_user(user_id: int, user_update: InputUserUpdate, authorization: str | None = Header(default=None)):
     """
@@ -319,7 +329,6 @@ def update_user(user_id: int, user_update: InputUserUpdate, authorization: str |
         return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
     finally:
         db_session.close()
-
 @user.get("/user/delete/{user_id}")
 def delete_user(user_id: int, authorization: str | None = Header(default=None)):
     """
@@ -392,7 +401,6 @@ def change_own_password(pass_data: InputPasswordChange, authorization: str | Non
         return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
     finally:
         db_session.close()
-
 @user.post("/user/reset-password/admin/{user_id}")
 def admin_reset_password(user_id: int, pass_data: InputAdminPasswordReset, authorization: str | None = Header(default=None)):
     """
@@ -430,5 +438,30 @@ def admin_reset_password(user_id: int, pass_data: InputAdminPasswordReset, autho
     except Exception as e:
         db_session.rollback()
         return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
+    finally:
+        db_session.close()
+
+@user.delete("/users/{user_id}/careers/{career_id}")
+def unassign_career_from_user(user_id: int, career_id: int, authorization: str | None = Header(default=None)):
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    if "username" not in token_data: return JSONResponse(status_code=401, content={"message": "Token inválido."})
+    
+    db_session = session
+    try:
+        admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
+
+        enrollment = db_session.query(PivoteUserCareer).filter_by(id_user=user_id, id_career=career_id).first()
+        if not enrollment: return JSONResponse(status_code=404, content={"message": "Inscripción no encontrada."})
+
+        db_session.delete(enrollment)
+        db_session.commit()
+        return JSONResponse(status_code=200, content={"message": "Carrera quitada con éxito."})
+
+    except Exception:
+        db_session.rollback()
+        return JSONResponse(status_code=500, content={"message": "Error interno al quitar la carrera."})
     finally:
         db_session.close()
