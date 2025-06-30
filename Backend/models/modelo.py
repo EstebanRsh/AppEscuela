@@ -118,6 +118,9 @@ class InputUserUpdate(BaseModel):
 class InputPasswordChange(BaseModel):
     current_password: str
     new_password: str
+    
+class InputAdminPasswordReset(BaseModel):
+    new_password: str
 
 # endregion
 

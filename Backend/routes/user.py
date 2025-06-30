@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from fastapi import APIRouter, Request, Header, File, UploadFile
 from fastapi.responses import JSONResponse
-from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer, InputUserUpdate, InputPasswordChange
+from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer, InputUserUpdate, InputPasswordChange, InputAdminPasswordReset
 from sqlalchemy.orm import joinedload
 from auth.security import Security
 import shutil
@@ -386,6 +386,46 @@ def change_own_password(pass_data: InputPasswordChange, authorization: str | Non
         db_session.commit()
         
         return JSONResponse(status_code=200, content={"message": "Contraseña actualizada con éxito."})
+
+    except Exception as e:
+        db_session.rollback()
+        return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
+    finally:
+        db_session.close()
+
+@user.post("/user/reset-password/admin/{user_id}")
+def admin_reset_password(user_id: int, pass_data: InputAdminPasswordReset, authorization: str | None = Header(default=None)):
+    """
+    Permite a un administrador restablecer la contraseña de cualquier usuario.
+    """
+    headers = {"authorization": authorization}
+    token_data = Security.verify_token(headers)
+    
+    # 1. Verificar que el solicitante es un administrador
+    requesting_user_username = token_data.get("username")
+    if not requesting_user_username:
+        return JSONResponse(status_code=401, content={"message": "Token inválido."})
+
+    db_session = session
+    try:
+        admin_user = db_session.query(User).options(joinedload(User.userdetail)).filter(User.username == requesting_user_username).first()
+        if not admin_user or admin_user.userdetail.type != 'administrador':
+            return JSONResponse(status_code=403, content={"message": "Permiso denegado. Se requiere rol de administrador."})
+
+        # 2. No permitir que un admin se cambie la contraseña a sí mismo por esta vía
+        if admin_user.id == user_id:
+            return JSONResponse(status_code=400, content={"message": "Usa la opción 'Mi Perfil' para cambiar tu propia contraseña."})
+
+        # 3. Encontrar y actualizar al usuario objetivo
+        user_to_update = db_session.query(User).filter(User.id == user_id).first()
+        if not user_to_update:
+            return JSONResponse(status_code=404, content={"message": "Usuario no encontrado."})
+        
+        # 4. Actualizar la contraseña
+        user_to_update.password = pass_data.new_password
+        db_session.commit()
+        
+        return JSONResponse(status_code=200, content={"message": f"La contraseña para {user_to_update.username} ha sido actualizada con éxito."})
 
     except Exception as e:
         db_session.rollback()
