@@ -24,10 +24,11 @@ const News = lazy(() => import("./views/public/News"));
 const Gallery = lazy(() => import("./views/public/Gallery"));
 const Faq = lazy(() => import("./views/public/Faq"));
 
-// Vistas Privadas (las que ya tenías)
+// Vistas Privadas 
 const Dashboard = lazy(() => import("./views/Dashboard"));
 const Notifications = lazy(() => import("./views/Notifications"));
 const Profile = lazy(() => import("./views/Profile"));
+// Vistas de Administración
 const UsersDashboard = lazy(() => import("./views/admin/UsersDashboard"));
 const Signup = lazy(() => import("./views/admin/Signup"));
 const UserEdit = lazy(() => import("./views/admin/UserEdit"));
@@ -35,11 +36,14 @@ const PaymentsDashboard = lazy(() => import("./views/admin/PaymentsDashboard"));
 const PaymentAdd = lazy(() => import("./views/admin/PaymentAdd"));
 const PaymentEdit = lazy(() => import("./views/admin/PaymentEdit"));
 const CareersDashboard = lazy(() => import("./views/admin/CareersDashboard"));
+const CareerEnrollments = lazy(() => import("./views/admin/CareerEnrollments"));
 const CareerAdd = lazy(() => import("./views/admin/CareerAdd"));
 const CareerEdit = lazy(() => import("./views/admin/CareerEdit"));
+// Vistas de Estudiante
 const MyPayments = lazy(() => import("./views/student/MyPayments"));
 const MyCareers = lazy(() => import("./views/student/MyCareers"));
 const StudentSubjectsView = lazy(() => import("./views/student/StudentSubjectsView"));
+// Vistas de Profesor
 const ProfessorCareersOverview = lazy(() => import("./views/professor/ProfessorCareersOverview"));
 const ProfessorSubjectsView = lazy(() => import("./views/professor/ProfessorSubjectsView"));
 
@@ -82,6 +86,7 @@ function App() {
               <Route path="careers" element={<CareersDashboard />} />
               <Route path="careers/add" element={<CareerAdd />} />
               <Route path="careers/:careerId/edit" element={<CareerEdit />} />
+              <Route path="careers/enrollments" element={<CareerEnrollments />} />
             </Route>
             
             <Route path="/student" element={<StudentRoutes />}>

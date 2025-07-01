@@ -314,7 +314,7 @@ function UserEdit() {
             <hr className="hr-custom my-4" />
             <div className="d-flex justify-content-between mt-4">
               <button type="button" className="btn btn-outline-danger" onClick={handleDelete} disabled={isLoading.delete}>{isLoading.delete ? <span className="spinner-border spinner-border-sm me-2"></span> : <i className="bi bi-trash-fill me-2"></i>}Eliminar Usuario</button>
-              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/users")}>Volver a Usuarios</button>
+              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate("/admin/users")}>Volver a Usuarios</button>
             </div>
           </div>
         </div>

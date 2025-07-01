@@ -133,7 +133,7 @@ function UsersDashboard() {
                               className="text-end actions-cell"
                             >
                               <Link
-                                to={`/user/edit/${user_item.id}`}
+                                to={`/admin/users/${user_item.id}/edit`}
                                 className="btn btn-outline-primary btn-sm"
                               >
                                 <i className="bi bi-pencil-square me-1"></i>

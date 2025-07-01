@@ -58,14 +58,14 @@ function CareersDashboard() {
             </h1>
             <div className="d-flex gap-2">
               <Link
-                to="/career-enrollments"
+                to="/admin/careers/enrollments"
                 className="btn btn-outline-info d-flex align-items-center"
               >
                 <i className="bi bi-search me-2"></i>
                 Consultar Inscritos
               </Link>
               <Link
-                to="/career/add"
+                to="/admin/careers/add"
                 className="btn btn-outline-success d-flex align-items-center"
               >
                 <i className="bi bi-plus-lg me-2"></i>
@@ -112,7 +112,7 @@ function CareersDashboard() {
                             className="text-end actions-cell"
                           >
                             <Link
-                              to={`/career/edit/${career.id}`}
+                              to={`/admin/careers/${career.id}/edit`}
                               className="btn btn-outline-primary btn-sm"
                             >
                               <i className="bi bi-pencil-square me-1"></i>
