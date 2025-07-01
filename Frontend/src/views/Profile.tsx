@@ -11,14 +11,8 @@ type UserInfo = {
   username: string;
 };
 
-type UserCareer = {
-    usuario: string;
-    carrera: string;
-};
-
 function Profile() {
   const [user, setUser] = useState<UserInfo>(JSON.parse(localStorage.getItem("user") || "{}"));
-  const [userCareers, setUserCareers] = useState<UserCareer[]>([]);
   const [isDetailsVisible, setIsDetailsVisible] = useState(true);
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -27,7 +21,8 @@ function Profile() {
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [passwordMessage, setPasswordMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
-  const [isLoading, setIsLoading] = useState({ photo: false, password: false, careers: true });
+  // Se elimina 'careers' del estado de carga
+  const [isLoading, setIsLoading] = useState({ photo: false, password: false });
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
     current_password: '',
@@ -35,27 +30,7 @@ function Profile() {
     confirm_new_password: ''
   });
 
-  useEffect(() => {
-    if (user.type === 'alumno' && user.username) {
-        const fetchUserCareers = async () => {
-            setIsLoading(prev => ({...prev, careers: true}));
-            const token = localStorage.getItem("token") || "";
-            try {
-                const res = await fetch(`http://localhost:8000/user/career/${user.username}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) throw new Error("No se pudieron cargar las carreras.");
-                const data = await res.json();
-                setUserCareers(data);
-            } catch (err) {
-                console.error("Error fetching user careers:", err);
-            } finally {
-                setIsLoading(prev => ({...prev, careers: false}));
-            }
-        };
-        fetchUserCareers();
-    }
-  }, [user.username, user.type]);
+  // El useEffect que buscaba las carreras ha sido eliminado.
 
   const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -162,7 +137,6 @@ function Profile() {
           <h1 className="m-0 h3"><i className="bi bi-person-badge-fill text-warning me-2"></i>Mi Perfil</h1>
         </div>
         <div className="card-body p-lg-5">
-          {/* AÑADE la clase 'profile-responsive-row' aquí */}
           <div className="row g-5 profile-responsive-row">
             <div className="col-lg-4 text-center">
               <div 
@@ -197,27 +171,7 @@ function Profile() {
                   <span className="badge bg-warning text-dark">{user.type}</span>
                   <hr className="hr-custom my-4" />
                   
-                  {user.type === 'alumno' && (
-                    <div className="mb-4">
-                        <h5>Mis Carreras</h5>
-                        {isLoading.careers ? (
-                            <p className="text-white-50">Cargando carreras...</p>
-                        ) : (
-                          userCareers.length > 0 ? (
-                              <ul className="list-group list-group-flush">
-                                  {userCareers.map(career => (
-                                      <li key={career.carrera} className="list-group-item-custom">
-                                          <i className="bi bi-mortarboard-fill me-2 text-warning"></i>{career.carrera}
-                                      </li>
-                                  ))}
-                              </ul>
-                          ) : (
-                              <p className="text-white-50">No estás inscrito en ninguna carrera.</p>
-                          )
-                        )}
-                        <hr className="hr-custom my-4" />
-                    </div>
-                  )}
+                  {/* El bloque que mostraba las carreras ha sido eliminado. */}
               </div>
               
               <div className="security-section">

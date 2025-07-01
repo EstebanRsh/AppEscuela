@@ -83,7 +83,7 @@ function CareerAdd() {
                     )}
                     
                     <div className="d-flex justify-content-end mt-4">
-                        <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate('/careers')}>
+                        <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate('/admin/careers')}>
                             Cancelar
                         </button>
                         <button type="submit" className="btn btn-outline-success" disabled={isLoading}>
