@@ -9,7 +9,7 @@ const Navbar = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin = user && user.type === "administrador";
   const isStudent = user.type === "alumno";
-  const isProfessor = user.type === "profesor"; 
+  const isProfessor = user.type === "profesor";
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -110,6 +110,18 @@ const Navbar = () => {
                     Carreras
                   </NavLink>
                 </li>
+                <li className="nav-item">
+                  <NavLink
+                    className="nav-link"
+                    to="/admin/messages"
+                    style={({ isActive }) =>
+                      isActive ? activeLinkStyle : undefined
+                    }
+                    onClick={closeNavbarCollapse}
+                  >
+                    Enviar Mensaje
+                  </NavLink>
+                </li>
               </>
             )}
             {isStudent && (
@@ -138,18 +150,6 @@ const Navbar = () => {
                     Mis Carreras
                   </NavLink>
                 </li>
-                <li className="nav-item">
-                  <NavLink
-                    className="nav-link"
-                    to="/notifications"
-                    style={({ isActive }) =>
-                      isActive ? activeLinkStyle : undefined
-                    }
-                    onClick={closeNavbarCollapse}
-                  >
-                    Notificaciones
-                  </NavLink>
-                </li>
               </>
             )}
             {isProfessor && (
@@ -162,10 +162,22 @@ const Navbar = () => {
                   }
                   onClick={closeNavbarCollapse}
                 >
-                  Carreras 
+                  Carreras
                 </NavLink>
               </li>
             )}
+            <li className="nav-item">
+              <NavLink
+                className="nav-link"
+                to="/notifications"
+                style={({ isActive }) =>
+                  isActive ? activeLinkStyle : undefined
+                }
+                onClick={closeNavbarCollapse}
+              >
+                Notificaciones
+              </NavLink>
+            </li>
           </ul>
 
           <ul className="navbar-nav">

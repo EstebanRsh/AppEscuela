@@ -1,5 +1,5 @@
 from configs.db import engine, Base
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import sessionmaker, relationship
 from pydantic import BaseModel
 import datetime
@@ -11,6 +11,8 @@ class User(Base):
     username = Column( String(50), nullable=False, unique=True)
     password = Column(String(40))
     id_userdetail = Column(Integer, ForeignKey("userdetail.id"))
+    sent_messages = relationship("Message", foreign_keys="[Message.sender_id]", back_populates="sender", cascade="all, delete-orphan")
+    received_messages = relationship("Message", foreign_keys="[Message.recipient_id]", back_populates="recipient", cascade="all, delete-orphan")
     userdetail = relationship("UserDetail", uselist=False, cascade="all, delete-orphan", single_parent=True)
     payments= relationship("Payment", uselist=True, cascade="all, delete-orphan")
     pivoteusercareer = relationship("PivoteUserCareer", cascade="all, delete-orphan")
@@ -72,6 +74,23 @@ class PivoteUserCareer(Base):
     def __init__(self, id_user, id_career):
         self.id_user = id_user
         self.id_career = id_career
+
+class Message(Base):
+    __tablename__ = "message"
+    id = Column(Integer, primary_key=True)
+    sender_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    recipient_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    content = Column(String(500), nullable=False)
+    timestamp = Column(DateTime, default=datetime.datetime.now)
+    is_read = Column(Boolean, default=False, nullable=False)
+
+    sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")
+    recipient = relationship("User", foreign_keys=[recipient_id], back_populates="received_messages")
+
+    def __init__(self, sender_id, recipient_id, content):
+        self.sender_id = sender_id
+        self.recipient_id = recipient_id
+        self.content = content
 # endregion
 
 # region Pydantic Models
@@ -122,6 +141,19 @@ class InputPasswordChange(BaseModel):
 class InputAdminPasswordReset(BaseModel):
     new_password: str
 
+class InputMessage(BaseModel):
+    recipient_id: int
+    content: str
+
+class MessageResponse(BaseModel):
+    id: int
+    sender_id: int
+    content: str
+    timestamp: datetime.datetime
+    is_read: bool
+    
+    class Config:
+        from_attributes = True
 # endregion
 
 # region configuraciones 
