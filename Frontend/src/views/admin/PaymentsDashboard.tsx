@@ -116,7 +116,7 @@ return (
                         {isAdmin && (
                           <td data-label="Acciones" className="text-end actions-cell">
                             <Link
-                              to={`/payment/edit/${payment.id_pago}`}
+                              to={`/admin/payments/${payment.id_pago}/edit`}
                               className="btn btn-outline-primary btn-sm"
                             >
                               <i className="bi bi-pencil-square me-1"></i>
