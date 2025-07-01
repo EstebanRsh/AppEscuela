@@ -39,7 +39,7 @@ function CareerAdd() {
         }
 
         alert(result.message);
-        navigate('/careers');
+        navigate('/admin/careers');
 
     } catch (err: any) {
         setMessage({ type: 'error', text: err.message });

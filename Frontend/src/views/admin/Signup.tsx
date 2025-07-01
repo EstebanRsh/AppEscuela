@@ -132,7 +132,6 @@ function Signup() {
                             <select className="form-select" id="type" value={formData.type} onChange={handleInputChange}>
                                 <option value="alumno">Alumno</option>
                                 <option value="profesor">Profesor</option>
-                                <option value="administrador">Administrador</option>
                             </select>
                         </div>
                     </div>

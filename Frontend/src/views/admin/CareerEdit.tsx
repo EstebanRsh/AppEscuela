@@ -58,7 +58,7 @@ function CareerEdit() {
         throw new Error(data.message || "Error al actualizar.");
       }
       alert(data.message);
-      navigate("/careers");
+      navigate("/admin/careers");
     } catch (err: any) {
       setMessage({ type: "error", text: err.message });
     } finally {
@@ -90,7 +90,7 @@ function CareerEdit() {
         throw new Error(data.message || "Error al eliminar");
       }
       alert(data.message);
-      navigate("/careers");
+      navigate("/admin/careers");
     } catch (error: any) {
       setMessage({ type: "error", text: error.message });
     } finally {
@@ -163,20 +163,7 @@ function CareerEdit() {
                   >
                     Cancelar
                   </button>
-                  <button
-                    type="button"
-                    className="btn btn-outline-danger"
-                    onClick={handleDeleteCareer}
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? (
-                      <span className="spinner-border spinner-border-sm"></span>
-                    ) : (
-                      <>
-                        <i className="bi bi-trash-fill me-2"></i>Eliminar
-                      </>
-                    )}
-                  </button>
+                  
                 </div>
               </div>
             </form>
