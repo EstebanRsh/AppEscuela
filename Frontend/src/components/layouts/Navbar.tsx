@@ -15,6 +15,7 @@ const Navbar = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/login");
+    closeNavbarCollapse();
   };
 
   const closeNavbarCollapse = () => {
@@ -59,67 +60,33 @@ const Navbar = () => {
           id="navbarNav"
           ref={collapseNavbarRef}
         >
+          {/* --- Enlaces Principales a la Izquierda --- */}
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             {isAdmin && (
               <>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link"
-                    to="/dashboard"
-                    style={({ isActive }) =>
-                      isActive ? activeLinkStyle : undefined
-                    }
-                    onClick={closeNavbarCollapse}
-                  >
-                    Dashboard
+                  <NavLink className="nav-link" to="/dashboard" style={({ isActive }) => isActive ? activeLinkStyle : undefined} onClick={closeNavbarCollapse}>
+                    <i className="bi bi-layout-wtf me-2"></i>Dashboard
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link"
-                    to="/admin/users"
-                    style={({ isActive }) =>
-                      isActive ? activeLinkStyle : undefined
-                    }
-                    onClick={closeNavbarCollapse}
-                  >
-                    Usuarios
+                  <NavLink className="nav-link" to="/admin/users" style={({ isActive }) => isActive ? activeLinkStyle : undefined} onClick={closeNavbarCollapse}>
+                    <i className="bi bi-people-fill me-2"></i>Usuarios
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link"
-                    to="/admin/payments"
-                    style={({ isActive }) =>
-                      isActive ? activeLinkStyle : undefined
-                    }
-                    onClick={closeNavbarCollapse}
-                  >
-                    Pagos
+                  <NavLink className="nav-link" to="/admin/payments" style={({ isActive }) => isActive ? activeLinkStyle : undefined} onClick={closeNavbarCollapse}>
+                    <i className="bi bi-cash-coin me-2"></i>Pagos
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link"
-                    to="/admin/careers"
-                    style={({ isActive }) =>
-                      isActive ? activeLinkStyle : undefined
-                    }
-                    onClick={closeNavbarCollapse}
-                  >
-                    Carreras
+                  <NavLink className="nav-link" to="/admin/careers" style={({ isActive }) => isActive ? activeLinkStyle : undefined} onClick={closeNavbarCollapse}>
+                    <i className="bi bi-diagram-3-fill me-2"></i>Carreras
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link"
-                    to="/admin/messages"
-                    style={({ isActive }) =>
-                      isActive ? activeLinkStyle : undefined
-                    }
-                    onClick={closeNavbarCollapse}
-                  >
-                    Enviar Mensaje
+                  <NavLink className="nav-link" to="/admin/messages" style={({ isActive }) => isActive ? activeLinkStyle : undefined} onClick={closeNavbarCollapse}>
+                    <i className="bi bi-send-fill me-2"></i>Enviar Mensaje
                   </NavLink>
                 </li>
               </>
@@ -127,90 +94,58 @@ const Navbar = () => {
             {isStudent && (
               <>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link"
-                    to="/student/payments"
-                    style={({ isActive }) =>
-                      isActive ? activeLinkStyle : undefined
-                    }
-                    onClick={closeNavbarCollapse}
-                  >
-                    Mis Pagos
+                  <NavLink className="nav-link" to="/student/payments" style={({ isActive }) => isActive ? activeLinkStyle : undefined} onClick={closeNavbarCollapse}>
+                    <i className="bi bi-wallet2 me-2"></i>Mis Pagos
                   </NavLink>
                 </li>
                 <li className="nav-item">
-                  <NavLink
-                    className="nav-link"
-                    to="/student/careers"
-                    style={({ isActive }) =>
-                      isActive ? activeLinkStyle : undefined
-                    }
-                    onClick={closeNavbarCollapse}
-                  >
-                    Mis Carreras
+                  <NavLink className="nav-link" to="/student/careers" style={({ isActive }) => isActive ? activeLinkStyle : undefined} onClick={closeNavbarCollapse}>
+                    <i className="bi bi-mortarboard-fill me-2"></i>Mis Carreras
                   </NavLink>
                 </li>
               </>
             )}
             {isProfessor && (
               <li className="nav-item">
-                <NavLink
-                  className="nav-link"
-                  to="/professor/careers"
-                  style={({ isActive }) =>
-                    isActive ? activeLinkStyle : undefined
-                  }
-                  onClick={closeNavbarCollapse}
-                >
-                  Carreras
+                <NavLink className="nav-link" to="/professor/careers" style={({ isActive }) => isActive ? activeLinkStyle : undefined} onClick={closeNavbarCollapse}>
+                  <i className="bi bi-person-video3 me-2"></i>Carreras
                 </NavLink>
               </li>
             )}
-            <li className="nav-item">
-              <NavLink
-                className="nav-link"
-                to="/notifications"
-                style={({ isActive }) =>
-                  isActive ? activeLinkStyle : undefined
-                }
-                onClick={closeNavbarCollapse}
-              >
-                Notificaciones
-              </NavLink>
-            </li>
           </ul>
 
-          <ul className="navbar-nav">
-            <li className="nav-item">
-              <NavLink
-                className="nav-link"
-                to="/profile"
-                style={({ isActive }) =>
-                  isActive ? activeLinkStyle : undefined
-                }
-                onClick={closeNavbarCollapse}
-              >
-                <img
-                  src={profileImageUrl}
-                  alt="Mi Perfil"
-                  className="profile-avatar me-2"
-                />
-                Mi Perfil
-              </NavLink>
-            </li>
-            <li className="nav-item ms-lg-2">
-              <a
-                className="nav-link logout-link"
-                href="#"
-                onClick={handleLogout}
-              >
-                <i className="bi bi-box-arrow-right align-middle fs-4"></i>
-                <span className="align-middle ms-2 d-none d-lg-inline">
-                  Cerrar Sesión
-                </span>
-              </a>
-            </li>
-          </ul>
+          {/* --- CORRECCIÓN AQUÍ: Contenedor para los elementos de la derecha --- */}
+          {/* Usamos d-flex y align-items-center para alinear todo verticalmente */}
+          <div className="d-flex align-items-center">
+            <ul className="navbar-nav">
+              <li className="nav-item">
+                <NavLink className="nav-link" to="/notifications" style={({ isActive }) => isActive ? activeLinkStyle : undefined} onClick={closeNavbarCollapse}>
+                  <i className="bi bi-bell-fill me-2"></i>Notificaciones
+                </NavLink>
+              </li>
+            </ul>
+            <ul className="navbar-nav ms-lg-2"> {/* Margen para separar en pantallas grandes */}
+              <li className="nav-item dropdown">
+                <a className="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <img src={profileImageUrl} alt="Mi Perfil" className="profile-avatar me-2"/>
+                  {user.first_name}
+                </a>
+                <ul className="dropdown-menu dropdown-menu-dark dropdown-menu-end">
+                  <li>
+                    <NavLink className="dropdown-item" to="/profile" onClick={closeNavbarCollapse}>
+                      <i className="bi bi-person-circle me-2"></i>Mi Perfil
+                    </NavLink>
+                  </li>
+                  <li><hr className="dropdown-divider" /></li>
+                  <li>
+                    <a className="dropdown-item logout-link" href="#" onClick={handleLogout}>
+                      <i className="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                    </a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </nav>
