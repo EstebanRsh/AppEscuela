@@ -13,7 +13,9 @@ class Security:
         payload = {
             "iat": cls.hoy(), 
             "exp": cls.hoy() + datetime.timedelta(minutes=480),
-            "username" : authUser.username
+            "username" : authUser.username,
+            "user_id": authUser.id,
+            "role": authUser.userdetail.type.lower()  # "administrador", "alumno"
         }
         try:
             return jwt.encode(payload, cls.secret, algorithm="HS256")
@@ -37,5 +39,3 @@ class Security:
                 return {"message":"Error desconocido durante la validación del token!"}
         else:
             return {"message" : "Error, header inexistente!"}
-
-           
