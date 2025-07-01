@@ -1,5 +1,5 @@
 from configs.db import engine, Base
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Date
 from sqlalchemy.orm import sessionmaker, relationship
 from pydantic import BaseModel
 import datetime
@@ -52,16 +52,17 @@ class Payment(Base):
     id_career=Column(Integer, ForeignKey("career.id"))
     id_user=Column(Integer, ForeignKey("user.id"))
     amount = Column(Integer)
-    affected_month = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.datetime.now())
+    affected_month = Column(Date)
+    created_at = Column(DateTime, default=datetime.datetime.now)
     user = relationship("User", uselist=False, back_populates="payments")
     career = relationship("Career", uselist=False)
 
-    def __init__(self, a, b, c, d):
-        self.id_career = a
-        self.id_user = b
-        self.amount = c
-        self.affected_month = d
+    # Constructor corregido para aceptar argumentos por nombre
+    def __init__(self, id_career, id_user, amount, affected_month):
+        self.id_career = id_career
+        self.id_user = id_user
+        self.amount = amount
+        self.affected_month = affected_month
 
 class PivoteUserCareer(Base):
     __tablename__="pivote_user_career"
@@ -121,7 +122,7 @@ class InputPayment(BaseModel):
     id_career: int
     id_user: int
     amount: int
-    affected_month: datetime.date
+    affected_month: str
 
 class InputUserAddCareer(BaseModel):
     id_user: int

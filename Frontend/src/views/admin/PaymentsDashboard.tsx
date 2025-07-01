@@ -70,7 +70,7 @@ return (
             <i className="bi bi-cash-coin text-warning me-2"></i>
             Gestión de Pagos
           </h1>
-          <Link to="/payment/add" className="btn btn-outline-success d-flex align-items-center">
+          <Link to="/admin/payments/add" className="btn btn-outline-success d-flex align-items-center">
             <i className="bi bi-plus-lg me-2"></i>
             Registrar Pago
           </Link>
