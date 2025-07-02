@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
+import styles from "./UsersDashboard.module.css";
+
 
 // Se define un tipo más específico para el usuario
 type User = {
@@ -93,71 +95,84 @@ function UsersDashboard() {
             ) : (
               <div className="table-responsive">
                 {/* PASO 1: Asegúrate que esta clase esté en la tabla */}
-                <table className="table table-hover align-middle table-responsive-cards">
-                  <thead>
-                    <tr>
-                      <th>NOMBRE</th>
-                      <th>APELLIDO</th>
-                      <th>TIPO</th>
-                      <th>EMAIL</th>
-                      <th>CARRERAS</th>
-                      {isAdmin && <th className="text-end">ACCIONES</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.length > 0 ? (
-                      users.map((user_item) => (
-                        <tr key={user_item.id}>
-                          {/* PASO 2: Añade el 'data-label' a cada celda */}
-                          <td data-label="Nombre">{user_item.first_name}</td>
-                          <td data-label="Apellido">{user_item.last_name}</td>
-                          <td data-label="Tipo">{user_item.type}</td>
-                          <td data-label="Email">{user_item.email}</td>
-                          <td data-label="Carreras">
-                            {user_item.careers.length > 0 ? (
-                              user_item.careers.map((career, index) => (
-                                <span
-                                  key={index}
-                                  className="badge bg-secondary me-1"
-                                >
-                                  {career}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-white-50">--</span>
-                            )}
-                          </td>
-                          {isAdmin && (
-                            <td
-                              data-label="Acciones"
-                              className="text-end actions-cell"
-                            >
-                              <Link
-                                to={`/admin/users/${user_item.id}/edit`}
-                                className="btn btn-outline-primary btn-sm"
-                              >
-                                <i className="bi bi-pencil-square me-1"></i>
-                                Editar
-                              </Link>
-                            </td>
-                          )}
-                        </tr>
-                      ))
-                    ) : (
+                <div className={styles.tableWrapper}>
+                  <table className="table table-hover align-middle table-responsive-cards">
+                    <thead className={styles.stickyHeader}>
                       <tr>
-                        <td colSpan={isAdmin ? 5 : 4}>
-                          <div className="empty-state">
-                            <i className="bi bi-person-x-fill"></i>
-                            <h4 className="mt-3">No se encontraron usuarios</h4>
-                            <p>
-                              Aún no hay usuarios registrados en el sistema.
-                            </p>
-                          </div>
-                        </td>
+                        <th>NOMBRE</th>
+                        <th>APELLIDO</th>
+                        <th>TIPO</th>
+                        <th>EMAIL</th>
+                        <th>CARRERAS</th>
+                        {isAdmin && <th className="text-end">ACCIONES</th>}
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                  </table>
+
+                  {/* Scroll solo en las filas */}
+                  <div className={styles.tableBodyScroll}>
+                    <table className="table table-hover align-middle table-responsive-cards mb-0">
+                      <tbody>
+                        {users.length > 0 ? (
+                          users.map((user_item) => (
+                            <tr key={user_item.id}>
+                              <td data-label="Nombre">
+                                {user_item.first_name}
+                              </td>
+                              <td data-label="Apellido">
+                                {user_item.last_name}
+                              </td>
+                              <td data-label="Tipo">{user_item.type}</td>
+                              <td data-label="Email">{user_item.email}</td>
+                              <td data-label="Carreras">
+                                {user_item.careers.length > 0 ? (
+                                  user_item.careers.map((career, index) => (
+                                    <span
+                                      key={index}
+                                      className="badge bg-secondary me-1"
+                                    >
+                                      {career}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-white-50">--</span>
+                                )}
+                              </td>
+                              {isAdmin && (
+                                <td
+                                  data-label="Acciones"
+                                  className="text-end actions-cell"
+                                >
+                                  <Link
+                                    to={`/admin/users/${user_item.id}/edit`}
+                                    className="btn btn-outline-primary btn-sm"
+                                  >
+                                    <i className="bi bi-pencil-square me-1"></i>
+                                    Editar / Asignar
+                                  </Link>
+                                </td>
+                              )}
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={isAdmin ? 6 : 5}>
+                              <div className="empty-state">
+                                <i className="bi bi-person-x-fill"></i>
+                                <h4 className="mt-3">
+                                  No se encontraron usuarios
+                                </h4>
+                                <p>
+                                  Aún no hay usuarios registrados en el sistema.
+                                </p>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
           </div>
