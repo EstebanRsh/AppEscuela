@@ -35,7 +35,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <nav className="navbar fixed-top navbar-expand-lg navbar-dark bg-dark shadow-sm">
       <div className="container-fluid">
         <NavLink
           className="navbar-brand d-flex align-items-center"
