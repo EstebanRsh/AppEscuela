@@ -382,3 +382,46 @@ body {
   cursor: pointer;
   padding: 0.5rem 0;
 }
+
+/* ==========================================================================
+   6. ESTILOS PARA SCROLL
+   ========================================================================== */
+
+.tableWrapper {
+  width: 100%;
+}
+
+.stickyHeader {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 2;
+}
+
+.tableBodyScroll {
+  max-height: 400px;
+  overflow-y: auto;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #343a40 #6c757d;
+}
+
+/* Chrome, Edge y navegadores basados en WebKit */
+.tableBodyScroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.tableBodyScroll::-webkit-scrollbar-track {
+  background: #6c757d;
+  border-radius: 10px;
+}
+
+.tableBodyScroll::-webkit-scrollbar-thumb {
+  background: #343a40;
+  border-radius: 10px;
+}
+
+.tableBodyScroll table {
+  margin: 0;
+}

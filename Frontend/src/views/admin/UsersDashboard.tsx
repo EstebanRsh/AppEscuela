@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
-import styles from "./UsersDashboard.module.css";
+
 
 
 // Se define un tipo más específico para el usuario
@@ -95,9 +95,9 @@ function UsersDashboard() {
             ) : (
               <div className="table-responsive">
                 {/* PASO 1: Asegúrate que esta clase esté en la tabla */}
-                <div className={styles.tableWrapper}>
+                <div className= "tableWrapper">
                   <table className="table table-hover align-middle table-responsive-cards">
-                    <thead className={styles.stickyHeader}>
+                    <thead className="stickyHeader">
                       <tr>
                         <th>NOMBRE</th>
                         <th>APELLIDO</th>
@@ -110,7 +110,7 @@ function UsersDashboard() {
                   </table>
 
                   {/* Scroll solo en las filas */}
-                  <div className={styles.tableBodyScroll}>
+                  <div className="tableBodyScroll">
                     <table className="table table-hover align-middle table-responsive-cards mb-0">
                       <tbody>
                         {users.length > 0 ? (
