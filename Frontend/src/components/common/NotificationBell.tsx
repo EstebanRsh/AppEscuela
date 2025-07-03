@@ -18,11 +18,13 @@ const NotificationBell = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if(!token) return;
     const fetchMessages = async () => {
       try {
         const res = await fetch("http://localhost:8000/messages", {
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (!res.ok) throw new Error("No autorizado");
         const data = await res.json();
         setMessages(data);
       } catch (err) {
@@ -33,6 +35,9 @@ const NotificationBell = () => {
   }, [token]);
 
   const unreadCount = messages.filter((msg) => !msg.is_read).length;
+
+  // 👉 Si no hay token, no mostrar nada
+  if (!token) return null;
 
   return (
     <>

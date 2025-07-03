@@ -174,11 +174,13 @@ const Navbar = () => {
           {/* --- CORRECCIÓN AQUÍ: Contenedor para los elementos de la derecha --- */}
           {/* Usamos d-flex y align-items-center para alinear todo verticalmente */}
           <div className="d-flex align-items-center">
-            <ul className="navbar-nav">
-              <li className="nav-item d-flex align-items-center me-3">
-                <NotificationBell />
-              </li>
-            </ul>
+            {localStorage.getItem("token") && (
+              <ul className="navbar-nav">
+                <li className="nav-item d-flex align-items-center me-3">
+                  <NotificationBell />
+                </li>
+              </ul>
+            )}
 
             <ul className="navbar-nav ms-lg-2">
               {" "}
