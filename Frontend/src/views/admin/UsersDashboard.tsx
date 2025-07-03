@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
 
-
-
 // Se define un tipo más específico para el usuario
 type User = {
   id: number;
@@ -95,23 +93,19 @@ function UsersDashboard() {
             ) : (
               <div className="table-responsive">
                 {/* PASO 1: Asegúrate que esta clase esté en la tabla */}
-                <div className= "tableWrapper">
-                  <table className="table table-hover align-middle table-responsive-cards">
-                    <thead className="stickyHeader">
-                      <tr>
-                        <th>NOMBRE</th>
-                        <th>APELLIDO</th>
-                        <th>TIPO</th>
-                        <th>EMAIL</th>
-                        <th>CARRERAS</th>
-                        {isAdmin && <th className="text-end">ACCIONES</th>}
-                      </tr>
-                    </thead>
-                  </table>
-
-                  {/* Scroll solo en las filas */}
+                <div className="tableWrapper">
                   <div className="tableBodyScroll">
                     <table className="table table-hover align-middle table-responsive-cards mb-0">
+                      <thead className="stickyHeader">
+                        <tr>
+                          <th>NOMBRE</th>
+                          <th>APELLIDO</th>
+                          <th>TIPO</th>
+                          <th>EMAIL</th>
+                          <th>CARRERAS</th>
+                          {isAdmin && <th className="text-end">ACCIONES</th>}
+                        </tr>
+                      </thead>
                       <tbody>
                         {users.length > 0 ? (
                           users.map((user_item) => (
