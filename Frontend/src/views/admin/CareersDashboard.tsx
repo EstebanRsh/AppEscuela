@@ -58,6 +58,13 @@ function CareersDashboard() {
             </h1>
             <div className="d-flex gap-2">
               <Link
+                to="/admin/careers/assign"
+                className="btn btn-outline-warning d-flex align-items-center"
+              >
+                <i className="bi bi-person-plus-fill me-2"></i>
+                Asignar Usuario
+              </Link>
+              <Link
                 to="/admin/careers/enrollments"
                 className="btn btn-outline-info d-flex align-items-center"
               >

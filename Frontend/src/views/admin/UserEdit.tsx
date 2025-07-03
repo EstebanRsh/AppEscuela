@@ -12,15 +12,6 @@ type UserDataType = {
   username: string;
 };
 
-type UserCareer = {
-  carrera: string;
-};
-
-type AllCareers = {
-  id: number;
-  name: string;
-};
-
 function UserEdit() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
@@ -35,11 +26,6 @@ function UserEdit() {
     username: "",
   });
 
-  // Estados para la gestión de carreras
-  const [userCareers, setUserCareers] = useState<UserCareer[]>([]);
-  const [allCareers, setAllCareers] = useState<AllCareers[]>([]);
-  const [selectedNewCareer, setSelectedNewCareer] = useState("");
-
   // Estados para el restablecimiento de contraseña
   const [resetPassword, setResetPassword] = useState("");
   const [confirmResetPassword, setConfirmResetPassword] = useState("");
@@ -50,7 +36,6 @@ function UserEdit() {
   } | null>(null);
 
   // Estados para controlar la visibilidad de las secciones colapsables
-  const [isCareersVisible, setIsCareersVisible] = useState(true);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   // Estado para mensajes generales
@@ -88,15 +73,6 @@ function UserEdit() {
         const userData = await userRes.json();
         setFormData({ ...userData, dni: String(userData.dni) });
 
-        const [allCareersRes, userCareersRes] = await Promise.all([
-          fetch("http://localhost:8000/career/all", { headers }),
-          fetch(`http://localhost:8000/user/career/${userData.username}`, {
-            headers,
-          }),
-        ]);
-
-        if (allCareersRes.ok) setAllCareers(await allCareersRes.json());
-        if (userCareersRes.ok) setUserCareers(await userCareersRes.json());
       } catch (err: any) {
         setMessage({ type: "error", text: err.message });
       } finally {
@@ -185,70 +161,6 @@ function UserEdit() {
     }
   };
 
-  const handleEnroll = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!selectedNewCareer) return;
-    setIsLoading((prev) => ({ ...prev, enroll: true }));
-    setMessage(null);
-    const token = localStorage.getItem("token") || "";
-    try {
-      const res = await fetch(`http://localhost:8000/users/${userId}/careers`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ id: Number(selectedNewCareer) }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Error al inscribir.");
-      const newCareerName =
-        allCareers.find((c) => c.id === Number(selectedNewCareer))?.name || "";
-      setUserCareers([...userCareers, { carrera: newCareerName }]);
-      setSelectedNewCareer("");
-      setMessage({ type: "success", text: "¡Carrera asignada con éxito!" });
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
-    } finally {
-      setIsLoading((prev) => ({ ...prev, enroll: false }));
-    }
-  };
-
-  const handleUnenroll = async (careerNameToRemove: string) => {
-    const careerToRemove = allCareers.find(
-      (c) => c.name === careerNameToRemove
-    );
-    if (
-      !careerToRemove ||
-      !window.confirm(
-        `¿Quitar la carrera "${careerNameToRemove}" de este usuario?`
-      )
-    )
-      return;
-    setIsLoading((prev) => ({ ...prev, unenroll: careerToRemove.id }));
-    setMessage(null);
-    const token = localStorage.getItem("token") || "";
-    try {
-      const res = await fetch(
-        `http://localhost:8000/users/${userId}/careers/${careerToRemove.id}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Error al desinscribir.");
-      setUserCareers(
-        userCareers.filter((c) => c.carrera !== careerNameToRemove)
-      );
-      setMessage({ type: "success", text: "¡Carrera quitada con éxito!" });
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
-    } finally {
-      setIsLoading((prev) => ({ ...prev, unenroll: null }));
-    }
-  };
-
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (passwordMatchError) {
@@ -298,10 +210,6 @@ function UserEdit() {
       </InfoContainer>
     );
   }
-
-  const availableCareers = allCareers.filter(
-    (c) => !userCareers.some((uc) => uc.carrera === c.name)
-  );
 
   return (
     <InfoContainer>
@@ -395,106 +303,6 @@ function UserEdit() {
                 </button>
               </div>
             </form>
-
-            {/* SECCIÓN COLAPSABLE DE CARRERAS */}
-            {(formData.type === "alumno" || formData.type === "profesor") && (
-              <>
-                <hr className="hr-custom my-4" />
-                <div
-                  className="accordion-header"
-                  onClick={() => setIsCareersVisible(!isCareersVisible)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <h4 className="mb-0 d-flex justify-content-between align-items-center">
-                    Gestión de Carreras Asignadas
-                    <i
-                      className={`bi ${
-                        isCareersVisible ? "bi-chevron-up" : "bi-chevron-down"
-                      }`}
-                    ></i>
-                  </h4>
-                </div>
-                <div
-                  className={`collapse ${isCareersVisible ? "show" : ""} mt-3`}
-                >
-                  <div className="row g-4">
-                    <div className="col-md-6">
-                      <h5>Carreras Actuales ({userCareers.length})</h5>
-                      {userCareers.length > 0 ? (
-                        <ul className="list-group">
-                          {userCareers.map((c) => (
-                            <li
-                              key={c.carrera}
-                              className="list-group-item list-group-item-dark d-flex justify-content-between align-items-center"
-                            >
-                              {c.carrera}
-                              <button
-                                className="btn btn-outline-danger btn-sm"
-                                onClick={() => handleUnenroll(c.carrera)}
-                                disabled={
-                                  isLoading.unenroll ===
-                                  allCareers.find((ac) => ac.name === c.carrera)
-                                    ?.id
-                                }
-                              >
-                                {isLoading.unenroll ===
-                                allCareers.find((ac) => ac.name === c.carrera)
-                                  ?.id ? (
-                                  <span className="spinner-border spinner-border-sm"></span>
-                                ) : (
-                                  <i className="bi bi-trash"></i>
-                                )}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div className="alert alert-secondary p-2">
-                          No tiene carreras asignadas.
-                        </div>
-                      )}
-                    </div>
-                    <div className="col-md-6">
-                      <h5>Inscribir a una carrera</h5>
-                      {availableCareers.length > 0 ? (
-                        <form onSubmit={handleEnroll}>
-                          <div className="input-group">
-                            <select
-                              className="form-select"
-                              value={selectedNewCareer}
-                              onChange={(e) =>
-                                setSelectedNewCareer(e.target.value)
-                              }
-                              required
-                            >
-                              <option value="" disabled>
-                                Seleccionar...
-                              </option>
-                              {availableCareers.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {c.name}
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              type="submit"
-                              className="btn btn-outline-info"
-                              disabled={isLoading.enroll}
-                            >
-                              {isLoading.enroll ? "..." : "Asignar"}
-                            </button>
-                          </div>
-                        </form>
-                      ) : (
-                        <div className="alert alert-info p-2">
-                          ¡Ya está en todas las carreras!
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
 
             {/* SECCIÓN COLAPSABLE DE CONTRASEÑA */}
             <hr className="hr-custom my-4" />

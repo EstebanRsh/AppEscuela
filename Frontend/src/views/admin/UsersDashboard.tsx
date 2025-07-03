@@ -142,7 +142,7 @@ function UsersDashboard() {
                                     className="btn btn-outline-primary btn-sm"
                                   >
                                     <i className="bi bi-pencil-square me-1"></i>
-                                    Editar / Asignar
+                                    Editar
                                   </Link>
                                 </td>
                               )}
