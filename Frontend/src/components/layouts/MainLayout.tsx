@@ -12,7 +12,6 @@ function MainLayout() {
           <Outlet />
         </Suspense>
       </main>
-      <Footer /> 
     </div>
   );
 }

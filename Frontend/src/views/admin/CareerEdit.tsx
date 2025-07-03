@@ -144,18 +144,32 @@ function CareerEdit() {
 
               <div className="d-flex justify-content-between mt-4 form-actions-responsive">
                 <button
-                  type="submit"
-                  className="btn btn-outline-success"
-                  disabled={isLoading}
+                  type="button"
+                  className="btn btn-outline-danger"
+                  onClick={handleDeleteCareer}
+                  disabled={isDeleting}
                 >
-                  {isLoading ? (
+                  {isDeleting ? (
                     <span className="spinner-border spinner-border-sm me-2"></span>
                   ) : (
-                    ""
+                    <i className="bi bi-trash-fill me-2"></i>
                   )}
-                  Guardar Cambios
+                  Eliminar Carrera
                 </button>
+
                 <div className="d-flex">
+                  <button
+                    type="submit"
+                    className="btn btn-outline-success me-2"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                    ) : (
+                      ""
+                    )}
+                    Guardar Cambios
+                  </button>
                   <button
                     type="button"
                     className="btn btn-outline-secondary me-2"
@@ -163,7 +177,6 @@ function CareerEdit() {
                   >
                     Cancelar
                   </button>
-                  
                 </div>
               </div>
             </form>

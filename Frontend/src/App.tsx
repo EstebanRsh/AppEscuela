@@ -36,7 +36,6 @@ const PaymentsDashboard = lazy(() => import("./views/admin/PaymentsDashboard"));
 const PaymentAdd = lazy(() => import("./views/admin/PaymentAdd"));
 const PaymentEdit = lazy(() => import("./views/admin/PaymentEdit"));
 const CareersDashboard = lazy(() => import("./views/admin/CareersDashboard"));
-const CareerEnrollments = lazy(() => import("./views/admin/CareerEnrollments"));
 const CareerUserAssignment = lazy(() => import("./views/admin/CareerUserAssignment"));
 const CareerAdd = lazy(() => import("./views/admin/CareerAdd"));
 const CareerEdit = lazy(() => import("./views/admin/CareerEdit"));
@@ -88,7 +87,6 @@ function App() {
               <Route path="careers" element={<CareersDashboard />} />
               <Route path="careers/add" element={<CareerAdd />} />
               <Route path="careers/:careerId/edit" element={<CareerEdit />} />
-              <Route path="careers/enrollments" element={<CareerEnrollments />} />
               <Route path="careers/assign" element={<CareerUserAssignment />} />
               <Route path="messages" element={<SendMessage />} />
               <Route path="send-message/:recipientId" element={<SendMessage />} />

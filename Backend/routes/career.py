@@ -122,7 +122,7 @@ def delete_career(career_id: int, authorization: str | None = Header(default=Non
         db_session.rollback()
         # Este error puede ocurrir si un alumno está inscrito en la carrera que intentas borrar.
         print("Error al eliminar carrera:", e)
-        return JSONResponse(status_code=409, content={"message": f"Error: No se puede eliminar la carrera, es posible que esté en uso."})
+        return JSONResponse(status_code=409, content={"message": f"Error: No se puede eliminar la carrera, es posible que esté en uso. Para esto, necesita eliminar usuarios inscriptos a esta carrera"})
     finally:
         db_session.close()
 
