@@ -1,13 +1,25 @@
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError  
+# clase de excepción específica que se lanza cuando se viola una restricción de integridad en la base de datos (p. ej., insertar un valor duplicado en una columna única)
+# muy útil para manejar errores de bases de datos de manera controlada 
 from fastapi import APIRouter, Request, Header, File, UploadFile
-from fastapi.responses import JSONResponse
+# APIRouter (clase de FastAPI que permite organizar la API en módulos separados y reutilizables, agrupa rutas relacionadas)
+# Request (representa la solicitud HTTP entrante, permite acceder a cuerpo, encabezado, parámetros de ruta, etc.)
+# Header (función para declarar parámetros de encabezado HTTP)
+# File (función para declarar que un parámetro de ruta o de cuerpo es un archivo)
+# UploadFile (clase que proporciona una interfaz para manejar archivos subidos)
+from fastapi.responses import JSONResponse   # clase que permite devolver respuestas HTTP con un cuerpo JSON de forma explícita
 from models.modelo import session, User, UserDetail, PivoteUserCareer, InputUser, InputLogin, InputUserAddCareer, InputUserUpdate, InputPasswordChange, InputAdminPasswordReset
-from sqlalchemy.orm import joinedload, subqueryload
-from auth.security import Security
-import shutil
-import os
-import uuid 
-import traceback
+# importa una sesión, modelos de sqlalchemy y modelos de pydantic
+from sqlalchemy.orm import joinedload, subqueryload   # técnicas de carga ansiosa (eager loading)
+# joinedload (Permite cargar datos de relaciones (por ejemplo, los UserDetail de un User) en la misma consulta SQL utilizando un JOIN)
+# Esto evita el problema de las "N+1 consultas" donde se haría una consulta separada para cada objeto relacionado.
+# subqueryload (Carga los datos de las relaciones utilizando una subconsulta separada en lugar de un JOIN principal)
+# alternativa a joinedload 
+from auth.security import Security   # importa la clase Security
+import shutil  # módulo de utilidad de alto nivel para operaciones de archivos y directorios (para copiar, mover, eliminar archivos o directorios, etc.)
+import os   # módulo proporciona una forma de interactuar con el sistema operativo (operaciones como crear un directorio, listar el contenido de un directorio, etc.)
+import uuid # módulo para generar Identificadores Únicos Universales (UUIDs)(muy útiles para generar nombres de archivo únicos para los archivos subidos, evitando colisiones de nombres)
+import traceback   # muy útil para la depuración, ya que proporciona información detallada sobre dónde ocurrió un error en el código
 
 user = APIRouter()
 
@@ -16,21 +28,45 @@ user = APIRouter()
 def helloUser():
     return "Hello User!!!"
 
-@user.get("/users/all")
-def getAllUsers(req: Request):
+@user.get("/users/all")   
+def getAllUsers(req: Request):   
+    """
+    Endpoint para obtener la lista de todos los usuarios registrados.
+    Requiere autenticación JWT. Devuelve los detalles del usuario y las carreras asociadas.
+    """
     try:
+        # Verifica el token de autorización presente en los encabezados de la solicitud.
+        # Si el token no es válido (expirado, firma inválida, etc.),
+        # Security.verify_token devolverá un diccionario de error.
         has_access = Security.verify_token(req.headers)
+
+        # Si el payload decodificado del token no contiene la clave "iat" (issued at),
+        # significa que la verificación del token falló.
         if "iat" not in has_access:
+            # Devuelve una respuesta JSON con un código de estado 401 (Unauthorized)
+            # y el mensaje de error proporcionado por Security.verify_token.
             return JSONResponse(status_code=401, content=has_access)
         
+        # Realiza una consulta a la base de datos para obtener todos los objetos User.
+        # joinedload(User.userdetail): Carga ansiosamente los detalles del usuario (UserDetail)
+        # utilizando un JOIN en la misma consulta para evitar el problema N+1.
+        # subqueryload(User.pivoteusercareer).joinedload(PivoteUserCareer.career):
+        # Carga ansiosamente las relaciones de carrera del usuario. Primero, carga la tabla pivote
+        # (PivoteUserCareer) con una subconsulta, y luego carga los detalles de la carrera (Career)
+        # mediante un JOIN dentro de esa subconsulta.
         users_query = session.query(User).options(
             joinedload(User.userdetail),
             subqueryload(User.pivoteusercareer).joinedload(PivoteUserCareer.career)
         ).all()
         
         result_list = []
+        # Itera sobre cada objeto User obtenido de la consulta.
         for user_item in users_query:
+            # Crea una lista de los nombres de las carreras asociadas a este usuario.
+            # Itera a través de los objetos PivoteUserCareer y extrae el nombre de la carrera.
             user_careers = [p.career.name for p in user_item.pivoteusercareer if p.career]
+
+            # Agrega un diccionario a la lista de resultados con la información formateada del usuario.
             result_list.append({
                 "id": user_item.id,
                 "username": user_item.username,
@@ -41,34 +77,59 @@ def getAllUsers(req: Request):
                 "email": user_item.userdetail.email,
                 "careers": user_careers
             })
+        # Devuelve una respuesta JSON con un código de estado 200 (OK)
+        # y la lista de usuarios formateada.
         return JSONResponse(status_code=200, content=result_list)
 
     except Exception as ex:
+        # Imprime el rastreo completo de la excepción en la consola del servidor para depuración.
         traceback.print_exc()
+        # Devuelve una respuesta JSON con un código de estado 500 (Internal Server Error)
+        # y un mensaje genérico de error.
         return JSONResponse(status_code=500, content={"message": "Error interno al obtener los usuarios"})
     finally:
+        # Asegura que la sesión de la base de datos se cierre, liberando los recursos de conexión.
         session.close()
 
-@user.post("/users/add")
+@user.post("/users/add")   
 def create_user(us: InputUser, authorization: str | None = Header(default=None)):
+    """
+    Endpoint para crear un nuevo usuario.
+    Requiere autenticación JWT y que el usuario que realiza la solicitud sea un 'administrador'.
+    """
+    # Construye un diccionario de encabezados para pasarlo a la función de verificación del token.
     headers = {"authorization": authorization}
+    # Verifica la validez del token JWT proporcionado en los encabezados.
     token_data = Security.verify_token(headers)
 
+    # Si el payload del token no contiene la clave 'username', significa que el token es inválido o falta.
     if "username" not in token_data:
+        # Retorna un error de no autorizado.
         return JSONResponse(status_code=401, content={"message": "No estás autorizado o el token es inválido."})
 
+    # Extrae el nombre de usuario del token decodificado para identificar al usuario que hace la solicitud.
     requesting_user_username = token_data["username"]
+    # Consulta la base de datos para obtener los detalles del usuario que está haciendo la solicitud.
+    # joinedload(User.userdetail) carga ansiosamente los detalles del usuario para evitar consultas adicionales.
     requesting_user = session.query(User).filter(User.username == requesting_user_username).options(joinedload(User.userdetail)).first()
 
+    # Verifica si el usuario que solicita la creación existe y si su tipo de usuario es 'administrador'.
+    # Si no cumple alguna de estas condiciones, se deniega el permiso.
     if not requesting_user or requesting_user.userdetail.type != 'administrador':
         return JSONResponse(status_code=403, content={"message": "Permiso denegado. Se requiere rol de administrador."})
 
     try:
+        # Crea una nueva instancia de User con el nombre de usuario y contraseña proporcionados.
         newUser = User(us.username, us.password)
+        # Crea una nueva instancia de UserDetail con la información detallada del usuario.
         newUserDetail = UserDetail(us.firstname, us.lastname, us.dni, us.type, us.email)
+        # Asocia los detalles del usuario con el nuevo usuario.
         newUser.userdetail = newUserDetail
+        # Añade el nuevo usuario (y sus detalles, gracias a la relación) a la sesión de la base de datos.
         session.add(newUser)
+        # Confirma la transacción, guardando el nuevo usuario en la base de datos.
         session.commit()
+        # Retorna una respuesta de éxito con el código de estado 201 (Created).
         return JSONResponse(status_code=201, content={"message": "Usuario creado con éxito!"})
     
     # --- INICIO DE LA CORRECCIÓN ---
@@ -90,12 +151,20 @@ def upload_profile_photo(authorization: str | None = Header(default=None), file:
     """
     Permite a un usuario logueado subir o cambiar su foto de perfil.
     """
+    # Construye un diccionario de encabezados a partir del parámetro 'authorization'.
     headers = {"authorization": authorization}
+    # Llama al método estático verify_token de la clase Security para decodificar y validar el token JWT.
+    # Si el token es válido, token_data contendrá el payload del token (un diccionario).
     token_data = Security.verify_token(headers)
+    # Intenta obtener el 'username' del payload del token.
     username = token_data.get("username")
+
+    # Si 'username' es None (lo que significa que no se encontró en el payload del token, o si es una cadena vacía)
+    # Devuelve una respuesta JSON
     if not username:
         return JSONResponse(status_code=401, content={"message": "Token inválido."})
 
+    # Renombra la variable 'session' a 'db_session' para mayor claridad y para evitar posibles confusiones
     db_session = session
     try:
         user_to_update = db_session.query(User).options(joinedload(User.userdetail)).filter(User.username == username).first()
@@ -128,6 +197,7 @@ def upload_profile_photo(authorization: str | None = Header(default=None), file:
         return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
     finally:
         db_session.close()
+
 @user.post("/users/login")
 def login_user(us: InputLogin):
     try:
@@ -166,6 +236,7 @@ def login_user(us: InputLogin):
         return JSONResponse(status_code=500, content={"message":"Error interno en el servidor."})
     finally:
         session.close()   
+
 @user.post("/user/addcareer")
 def addCareer(ins: InputUserAddCareer, authorization: str | None = Header(default=None)):
     """
@@ -194,8 +265,13 @@ def addCareer(ins: InputUserAddCareer, authorization: str | None = Header(defaul
         return JSONResponse(status_code=500, content={"message": "Error interno al procesar la inscripción."})
     finally:
         db_session.close()
+
 @user.get("/user/career/{_username}")
 def get_career_user(_username: str):
+    """
+    Endpoint para obtener las carreras asociadas a un usuario específico por su nombre de usuario.
+    La ruta incluye un parámetro de ruta '_username' para identificar al usuario.
+    """
     db_session = session
     try:
         user_found = db_session.query(User).filter(User.username == _username).first()
@@ -210,16 +286,28 @@ def get_career_user(_username: str):
     finally:
         db_session.close()
 
+# =================================================================================
 # --- RUTAS DE GESTIÓN DE CARRERAS (Refactorizadas y funcionales) ---
+# =================================================================================
 
 @user.post("/users/{user_id}/careers")
 def assign_career_to_user(user_id: int, career_data: dict, authorization: str | None = Header(default=None)):
+    """
+    Endpoint para asignar una carrera a un usuario específico.
+    Requiere autenticación JWT y que el usuario que realiza la solicitud sea un 'administrador'.
+    
+    Args:
+        user_id (int): El ID del usuario al que se asignará la carrera.
+        career_data (dict): Un diccionario que debe contener el 'id' de la carrera a asignar.
+        authorization (str | None): El token JWT en el encabezado 'Authorization'.
+    """
     headers = {"authorization": authorization}
     token_data = Security.verify_token(headers)
     if "username" not in token_data: return JSONResponse(status_code=401, content={"message": "Token inválido."})
     
     db_session = session
     try:
+        # Busca al usuario administrador que está realizando la solicitud por su nombre de usuario del token.
         admin_user = db_session.query(User).filter(User.username == token_data['username']).first()
         if not admin_user or admin_user.userdetail.type != 'administrador':
             return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
@@ -227,9 +315,11 @@ def assign_career_to_user(user_id: int, career_data: dict, authorization: str | 
         career_id = career_data.get("id")
         if not career_id: return JSONResponse(status_code=400, content={"message": "Falta el ID de la carrera."})
 
+        # Verifica si el usuario ya está inscrito en esta carrera.
         existing = db_session.query(PivoteUserCareer).filter_by(id_user=user_id, id_career=career_id).first()
         if existing: return JSONResponse(status_code=409, content={"message": "El usuario ya está inscrito en esta carrera."})
 
+        # Crea una nueva entrada en la tabla PivoteUserCareer con los IDs de usuario y carrera.
         new_enrollment = PivoteUserCareer(id_user=user_id, id_career=career_id)
         db_session.add(new_enrollment)
         db_session.commit()
@@ -240,6 +330,7 @@ def assign_career_to_user(user_id: int, career_data: dict, authorization: str | 
         return JSONResponse(status_code=500, content={"message": "Error interno al asignar la carrera."})
     finally:
         db_session.close()
+
 @user.get("/user/{user_id}")
 def get_user_by_id(user_id: int, authorization: str | None = Header(default=None)):
     """
@@ -285,6 +376,7 @@ def get_user_by_id(user_id: int, authorization: str | None = Header(default=None
         return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
     finally:
         db_session.close()  
+
 @user.put("/user/update/{user_id}")
 def update_user(user_id: int, user_update: InputUserUpdate, authorization: str | None = Header(default=None)):
     """
@@ -329,7 +421,8 @@ def update_user(user_id: int, user_update: InputUserUpdate, authorization: str |
         return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
     finally:
         db_session.close()
-@user.get("/user/delete/{user_id}")
+
+@user.delete("/user/delete/{user_id}")
 def delete_user(user_id: int, authorization: str | None = Header(default=None)):
     """
     Elimina un usuario y sus datos asociados.
@@ -346,16 +439,13 @@ def delete_user(user_id: int, authorization: str | None = Header(default=None)):
         if not admin_user or admin_user.userdetail.type != 'administrador':
             return JSONResponse(status_code=403, content={"message": "Permiso denegado."})
         
-        # Un admin no se puede eliminar a sí mismo
         if admin_user.id == user_id:
             return JSONResponse(status_code=400, content={"message": "No puedes eliminar tu propia cuenta."})
 
-        # Lógica de borrado simplificada
         user_to_delete = db_session.query(User).filter(User.id == user_id).first()
         if not user_to_delete:
             return JSONResponse(status_code=404, content={"message": "Usuario no encontrado."})
 
-        # Gracias al 'cascade', solo necesitamos borrar el usuario principal.
         db_session.delete(user_to_delete)
         db_session.commit()
         
@@ -367,6 +457,7 @@ def delete_user(user_id: int, authorization: str | None = Header(default=None)):
         return JSONResponse(status_code=500, content={"message": "Error interno del servidor."})
     finally:
         db_session.close()
+
 @user.post("/user/change-password/self")
 def change_own_password(pass_data: InputPasswordChange, authorization: str | None = Header(default=None)):
     """
@@ -401,6 +492,7 @@ def change_own_password(pass_data: InputPasswordChange, authorization: str | Non
         return JSONResponse(status_code=500, content={"message": f"Error interno: {e}"})
     finally:
         db_session.close()
+
 @user.post("/user/reset-password/admin/{user_id}")
 def admin_reset_password(user_id: int, pass_data: InputAdminPasswordReset, authorization: str | None = Header(default=None)):
     """
@@ -443,6 +535,15 @@ def admin_reset_password(user_id: int, pass_data: InputAdminPasswordReset, autho
 
 @user.delete("/users/{user_id}/careers/{career_id}")
 def unassign_career_from_user(user_id: int, career_id: int, authorization: str | None = Header(default=None)):
+    """
+    Endpoint para desasignar (quitar) una carrera de un usuario específico.
+    Requiere autenticación JWT y que el usuario que realiza la solicitud sea un 'administrador'.
+    
+    Args:
+        user_id (int): El ID del usuario al que se le quitará la carrera.
+        career_id (int): El ID de la carrera a quitar del usuario.
+        authorization (str | None): El token JWT en el encabezado 'Authorization'.
+    """
     headers = {"authorization": authorization}
     token_data = Security.verify_token(headers)
     if "username" not in token_data: return JSONResponse(status_code=401, content={"message": "Token inválido."})
