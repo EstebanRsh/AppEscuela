@@ -1,29 +1,59 @@
-import { useState } from 'react';
+import { useState, useEffect  } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InfoContainer from '../../components/common/InfoContainer';
+import { toast } from 'react-toastify';
 
+type Career = {
+  id: number;
+  name: string;
+};
 function CareerAdd() {
   const navigate = useNavigate();
   const [careerName, setCareerName] = useState('');
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [existingCareers, setExistingCareers] = useState<Career[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCareers = async () => {
+      const token = localStorage.getItem("token") || "";
+      try {
+        const res = await fetch("http://localhost:8000/career/all", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          // No mostramos un toast aquí para no ser intrusivos, 
+          // la validación del backend funcionará como respaldo.
+          console.error("No se pudieron cargar las carreras para validación.");
+          return;
+        }
+        const data = await res.json();
+        setExistingCareers(data);
+      } catch (err) {
+        console.error("Error al cargar carreras:", err);
+      }
+    };
+    fetchCareers();
+  }, []);
 
   const handleAddCareer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!careerName.trim()) {
-      setMessage({ type: 'error', text: "El nombre de la carrera no puede estar vacío." });
+      toast.error("El nombre de la carrera no puede estar vacío.");
       return;
     }
+        const isDuplicate = existingCareers.some(
+      (career) => career.name.toLowerCase() === careerName.trim().toLowerCase()
+    );
 
+    if (isDuplicate) {
+      toast.error("Ya existe una carrera con ese nombre.");
+      return;
+    }
     setIsLoading(true);
-    setMessage(null);
-
     const token = localStorage.getItem("token") || "";
-    const ADD_CAREER_URL = "http://localhost:8000/career/add";
-
     try {
-        const response = await fetch(ADD_CAREER_URL, {
+        const response = await fetch("http://localhost:8000/career/add", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -38,11 +68,11 @@ function CareerAdd() {
             throw new Error(result.message || "Error al añadir la carrera.");
         }
 
-        alert(result.message);
+       toast.success(result.message);
         navigate('/admin/careers');
 
     } catch (err: any) {
-        setMessage({ type: 'error', text: err.message });
+        toast.error(err.message);
     } finally {
         setIsLoading(false);
     }
@@ -75,13 +105,6 @@ function CareerAdd() {
                             required
                         />
                     </div>
-
-                    {message && (
-                        <div className={`alert mt-3 alert-${message.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
-                            {message.text}
-                        </div>
-                    )}
-                    
                     <div className="d-flex justify-content-end mt-4">
                         <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate('/admin/careers')}>
                             Cancelar

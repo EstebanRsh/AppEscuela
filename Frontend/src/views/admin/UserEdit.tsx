@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
+import { toast } from "react-toastify";
 
 // --- TIPOS DE DATOS ---
 type UserDataType = {
@@ -12,14 +13,37 @@ type UserDataType = {
   username: string;
 };
 
-type UserCareer = {
-  carrera: string;
-};
-
-type AllCareers = {
+type Career = {
   id: number;
   name: string;
 };
+
+type UserCareerResponse = {
+  carrera: string;
+};
+
+// --- COMPONENTE PARA TOAST DE CONFIRMACIÓN ---
+const ConfirmationToast = ({
+  onConfirm,
+  onCancel,
+  message,
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+  message: string;
+}) => (
+  <div>
+    <p className="mb-2">{message}</p>
+    <div className="d-flex justify-content-end gap-2">
+      <button onClick={onConfirm} className="btn btn-sm btn-danger">
+        Confirmar
+      </button>
+      <button onClick={onCancel} className="btn btn-sm btn-secondary">
+        Cancelar
+      </button>
+    </div>
+  </div>
+);
 
 function UserEdit() {
   const { userId } = useParams<{ userId: string }>();
@@ -35,31 +59,16 @@ function UserEdit() {
     username: "",
   });
 
-  // Estados para la gestión de carreras
-  const [userCareers, setUserCareers] = useState<UserCareer[]>([]);
-  const [allCareers, setAllCareers] = useState<AllCareers[]>([]);
+  const [userCareers, setUserCareers] = useState<UserCareerResponse[]>([]);
+  const [allCareers, setAllCareers] = useState<Career[]>([]);
   const [selectedNewCareer, setSelectedNewCareer] = useState("");
+  const [isCareersVisible, setIsCareersVisible] = useState(true);
 
-  // Estados para el restablecimiento de contraseña
   const [resetPassword, setResetPassword] = useState("");
   const [confirmResetPassword, setConfirmResetPassword] = useState("");
-  const [passwordMatchError, setPasswordMatchError] = useState("");
-  const [resetPasswordMessage, setResetPasswordMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-
-  // Estados para controlar la visibilidad de las secciones colapsables
-  const [isCareersVisible, setIsCareersVisible] = useState(true);
+  const [passwordMatchError, setPasswordMatchError] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  // Estado para mensajes generales
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
-
-  // Estado unificado para cargas
   const [isLoading, setIsLoading] = useState({
     page: true,
     update: false,
@@ -84,35 +93,28 @@ function UserEdit() {
           throw new Error(
             (await userRes.json()).message || "Error al cargar el usuario."
           );
-
         const userData = await userRes.json();
         setFormData({ ...userData, dni: String(userData.dni) });
 
         const [allCareersRes, userCareersRes] = await Promise.all([
           fetch("http://localhost:8000/career/all", { headers }),
-          fetch(`http://localhost:8000/user/career/${userData.username}`, {
-            headers,
-          }),
+          fetch(`http://localhost:8000/user/career/${userData.username}`, { headers }),
         ]);
-
         if (allCareersRes.ok) setAllCareers(await allCareersRes.json());
         if (userCareersRes.ok) setUserCareers(await userCareersRes.json());
       } catch (err: any) {
-        setMessage({ type: "error", text: err.message });
+        toast.error(err.message);
+        navigate('/admin/users');
       } finally {
         setIsLoading((prev) => ({ ...prev, page: false }));
       }
     };
     fetchData();
-  }, [userId]);
+  }, [userId, navigate]);
 
   useEffect(() => {
     setPasswordMatchError(
-      resetPassword &&
-        confirmResetPassword &&
-        resetPassword !== confirmResetPassword
-        ? "Las contraseñas no coinciden"
-        : ""
+      resetPassword !== confirmResetPassword && confirmResetPassword !== ""
     );
   }, [resetPassword, confirmResetPassword]);
 
@@ -127,7 +129,6 @@ function UserEdit() {
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading((prev) => ({ ...prev, update: true }));
-    setMessage(null);
     const token = localStorage.getItem("token") || "";
     try {
       const response = await fetch(
@@ -145,163 +146,178 @@ function UserEdit() {
         }
       );
       const result = await response.json();
-      if (!response.ok)
+      if (!response.ok) {
         throw new Error(result.message || "Error al actualizar.");
-      alert(result.message);
-      navigate("/users");
+      }
+      toast.success(result.message);
+      navigate("/admin/users");
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message });
+      toast.error(error.message);
     } finally {
       setIsLoading((prev) => ({ ...prev, update: false }));
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      !window.confirm(
-        `¿Seguro que quieres eliminar a ${formData.first_name}? Esta acción es irreversible.`
-      )
-    )
-      return;
-    setIsLoading((prev) => ({ ...prev, delete: true }));
-    setMessage(null);
-    const token = localStorage.getItem("token") || "";
-    try {
-      const response = await fetch(
-        `http://localhost:8000/user/delete/${userId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Error al eliminar.");
-      alert(result.message);
-      navigate("/users");
-    } catch (error: any) {
-      setMessage({ type: "error", text: error.message });
-    } finally {
-      setIsLoading((prev) => ({ ...prev, delete: false }));
-    }
+  const handleDelete = () => {
+    const performDelete = async () => {
+      setIsLoading((prev) => ({ ...prev, delete: true }));
+      const token = localStorage.getItem("token") || "";
+      try {
+        const response = await fetch(
+          `http://localhost:8000/user/delete/${userId}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const result = await response.json();
+        if (!response.ok)
+          throw new Error(result.message || "Error al eliminar.");
+        toast.success(result.message);
+        navigate("/admin/users");
+      } catch (error: any) {
+        toast.error(error.message);
+      } finally {
+        setIsLoading((prev) => ({ ...prev, delete: false }));
+      }
+    };
+
+    toast.warning(
+      <ConfirmationToast
+        message={`¿Eliminar a ${formData.first_name}? Esta acción es irreversible.`}
+        onConfirm={() => {
+          toast.dismiss();
+          performDelete();
+        }}
+        onCancel={() => toast.dismiss()}
+      />,
+      { autoClose: false, closeOnClick: false }
+    );
   };
 
   const handleEnroll = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedNewCareer) return;
-    setIsLoading((prev) => ({ ...prev, enroll: true }));
-    setMessage(null);
+    setIsLoading(prev => ({ ...prev, enroll: true }));
     const token = localStorage.getItem("token") || "";
     try {
       const res = await fetch(`http://localhost:8000/users/${userId}/careers`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ id: Number(selectedNewCareer) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Error al inscribir.");
-      const newCareerName =
-        allCareers.find((c) => c.id === Number(selectedNewCareer))?.name || "";
-      setUserCareers([...userCareers, { carrera: newCareerName }]);
+      
+      const newCareer = allCareers.find((c) => c.id === Number(selectedNewCareer));
+      if (newCareer) {
+        setUserCareers([...userCareers, { carrera: newCareer.name }]);
+      }
       setSelectedNewCareer("");
-      setMessage({ type: "success", text: "¡Carrera asignada con éxito!" });
+      toast.success("¡Carrera asignada con éxito!");
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
+      toast.error(err.message);
     } finally {
-      setIsLoading((prev) => ({ ...prev, enroll: false }));
+      setIsLoading(prev => ({ ...prev, enroll: false }));
     }
   };
 
-  const handleUnenroll = async (careerNameToRemove: string) => {
-    const careerToRemove = allCareers.find(
-      (c) => c.name === careerNameToRemove
-    );
-    if (
-      !careerToRemove ||
-      !window.confirm(
-        `¿Quitar la carrera "${careerNameToRemove}" de este usuario?`
-      )
-    )
-      return;
-    setIsLoading((prev) => ({ ...prev, unenroll: careerToRemove.id }));
-    setMessage(null);
-    const token = localStorage.getItem("token") || "";
-    try {
-      const res = await fetch(
-        `http://localhost:8000/users/${userId}/careers/${careerToRemove.id}`,
-        {
+  const handleUnenroll = (careerNameToRemove: string) => {
+    const careerToRemove = allCareers.find(c => c.name === careerNameToRemove);
+    if (!careerToRemove) return;
+  
+    const performUnenroll = async () => {
+      setIsLoading(prev => ({ ...prev, unenroll: careerToRemove.id }));
+      const token = localStorage.getItem("token") || "";
+      try {
+        const res = await fetch(`http://localhost:8000/users/${userId}/careers/${careerToRemove.id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Error al desinscribir.");
-      setUserCareers(
-        userCareers.filter((c) => c.carrera !== careerNameToRemove)
-      );
-      setMessage({ type: "success", text: "¡Carrera quitada con éxito!" });
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
-    } finally {
-      setIsLoading((prev) => ({ ...prev, unenroll: null }));
-    }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Error al desinscribir.");
+        
+        setUserCareers(userCareers.filter(c => c.carrera !== careerNameToRemove));
+        toast.success("¡Carrera quitada con éxito!");
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setIsLoading(prev => ({ ...prev, unenroll: null }));
+      }
+    };
+  
+    toast.warning(
+      <ConfirmationToast
+        message={`¿Quitar la carrera "${careerNameToRemove}" de este usuario?`}
+        onConfirm={() => { toast.dismiss(); performUnenroll(); }}
+        onCancel={() => toast.dismiss()}
+      />, { autoClose: false, closeOnClick: false }
+    );
   };
-
+    
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
     if (passwordMatchError) {
-      setResetPasswordMessage({
-        type: "error",
-        text: "Las contraseñas no coinciden.",
-      });
+      toast.error("Las contraseñas no coinciden.");
       return;
     }
-    if (!window.confirm(`¿Restablecer la contraseña para este usuario?`))
+    
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(resetPassword)) {
+      toast.error("La contraseña debe tener al menos 8 caracteres, 1 mayúscula y 1 número.");
       return;
-    setIsLoading((prev) => ({ ...prev, resetPass: true }));
-    setResetPasswordMessage(null);
-    const token = localStorage.getItem("token") || "";
-    try {
-      const res = await fetch(
-        `http://localhost:8000/user/reset-password/admin/${userId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ new_password: resetPassword }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.message || "Error al restablecer la contraseña.");
-      setResetPasswordMessage({ type: "success", text: data.message });
-      setResetPassword("");
-      setConfirmResetPassword("");
-    } catch (err: any) {
-      setResetPasswordMessage({ type: "error", text: err.message });
-    } finally {
-      setIsLoading((prev) => ({ ...prev, resetPass: false }));
     }
+
+    const performReset = async () => {
+      setIsLoading((prev) => ({ ...prev, resetPass: true }));
+      const token = localStorage.getItem("token") || "";
+      try {
+        const res = await fetch(
+          `http://localhost:8000/user/reset-password/admin/${userId}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ new_password: resetPassword }),
+          }
+        );
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(
+            data.message || "Error al restablecer la contraseña."
+          );
+
+        toast.success(data.message);
+        setResetPassword("");
+        setConfirmResetPassword("");
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setIsLoading((prev) => ({ ...prev, resetPass: false }));
+      }
+    };
+
+    toast.info(
+      <ConfirmationToast
+        message="¿Restablecer la contraseña para este usuario?"
+        onConfirm={() => {
+          toast.dismiss();
+          performReset();
+        }}
+        onCancel={() => toast.dismiss()}
+      />,
+      { autoClose: false, closeOnClick: false }
+    );
   };
 
-  // --- RENDERIZADO ---
   if (isLoading.page) {
-    return (
-      <InfoContainer>
-        <div className="text-center p-5">
-          <div className="spinner-border text-warning"></div>
-        </div>
-      </InfoContainer>
-    );
+    return <InfoContainer><div className="text-center p-5"><div className="spinner-border text-warning"></div></div></InfoContainer>;
   }
 
-  const availableCareers = allCareers.filter(
-    (c) => !userCareers.some((uc) => uc.carrera === c.name)
-  );
+  const availableCareers = allCareers.filter(c => !userCareers.some(uc => uc.carrera === c.name));
 
   return (
     <InfoContainer>
@@ -396,50 +412,28 @@ function UserEdit() {
               </div>
             </form>
 
-            {/* SECCIÓN COLAPSABLE DE CARRERAS */}
             {(formData.type === "alumno" || formData.type === "profesor") && (
               <>
                 <hr className="hr-custom my-4" />
-                <div
-                  className="accordion-header"
-                  onClick={() => setIsCareersVisible(!isCareersVisible)}
-                  style={{ cursor: "pointer" }}
-                >
+                <div className="accordion-header" onClick={() => setIsCareersVisible(!isCareersVisible)} style={{ cursor: "pointer" }}>
                   <h4 className="mb-0 d-flex justify-content-between align-items-center">
                     Gestión de Carreras Asignadas
-                    <i
-                      className={`bi ${
-                        isCareersVisible ? "bi-chevron-up" : "bi-chevron-down"
-                      }`}
-                    ></i>
+                    <i className={`bi ${isCareersVisible ? "bi-chevron-up" : "bi-chevron-down"}`}></i>
                   </h4>
                 </div>
-                <div
-                  className={`collapse ${isCareersVisible ? "show" : ""} mt-3`}
-                >
+                <div className={`collapse ${isCareersVisible ? "show" : ""} mt-3`}>
                   <div className="row g-4">
                     <div className="col-md-6">
                       <h5>Carreras Actuales ({userCareers.length})</h5>
                       {userCareers.length > 0 ? (
                         <ul className="list-group">
                           {userCareers.map((c) => (
-                            <li
-                              key={c.carrera}
-                              className="list-group-item list-group-item-dark d-flex justify-content-between align-items-center"
-                            >
+                            <li key={c.carrera} className="list-group-item list-group-item-dark d-flex justify-content-between align-items-center">
                               {c.carrera}
-                              <button
-                                className="btn btn-outline-danger btn-sm"
+                              <button className="btn btn-outline-danger btn-sm"
                                 onClick={() => handleUnenroll(c.carrera)}
-                                disabled={
-                                  isLoading.unenroll ===
-                                  allCareers.find((ac) => ac.name === c.carrera)
-                                    ?.id
-                                }
-                              >
-                                {isLoading.unenroll ===
-                                allCareers.find((ac) => ac.name === c.carrera)
-                                  ?.id ? (
+                                disabled={isLoading.unenroll === allCareers.find(ac => ac.name === c.carrera)?.id}>
+                                {isLoading.unenroll === allCareers.find(ac => ac.name === c.carrera)?.id ? (
                                   <span className="spinner-border spinner-border-sm"></span>
                                 ) : (
                                   <i className="bi bi-trash"></i>
@@ -449,46 +443,25 @@ function UserEdit() {
                           ))}
                         </ul>
                       ) : (
-                        <div className="alert alert-secondary p-2">
-                          No tiene carreras asignadas.
-                        </div>
+                        <div className="alert alert-secondary p-2">No tiene carreras asignadas.</div>
                       )}
                     </div>
                     <div className="col-md-6">
                       <h5>Inscribir a una carrera</h5>
                       {availableCareers.length > 0 ? (
-                        <form onSubmit={handleEnroll}>
+                        <form onSubmit={handleEnroll} noValidate>
                           <div className="input-group">
-                            <select
-                              className="form-select"
-                              value={selectedNewCareer}
-                              onChange={(e) =>
-                                setSelectedNewCareer(e.target.value)
-                              }
-                              required
-                            >
-                              <option value="" disabled>
-                                Seleccionar...
-                              </option>
-                              {availableCareers.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {c.name}
-                                </option>
-                              ))}
+                            <select className="form-select" value={selectedNewCareer} onChange={(e) => setSelectedNewCareer(e.target.value)} required>
+                              <option value="" disabled>Seleccionar...</option>
+                              {availableCareers.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
                             </select>
-                            <button
-                              type="submit"
-                              className="btn btn-outline-info"
-                              disabled={isLoading.enroll}
-                            >
+                            <button type="submit" className="btn btn-outline-info" disabled={isLoading.enroll}>
                               {isLoading.enroll ? "..." : "Asignar"}
                             </button>
                           </div>
                         </form>
                       ) : (
-                        <div className="alert alert-info p-2">
-                          ¡Ya está en todas las carreras!
-                        </div>
+                        <div className="alert alert-info p-2">¡Ya está en todas las carreras!</div>
                       )}
                     </div>
                   </div>
@@ -496,7 +469,6 @@ function UserEdit() {
               </>
             )}
 
-            {/* SECCIÓN COLAPSABLE DE CONTRASEÑA */}
             <hr className="hr-custom my-4" />
             <div
               className="accordion-header"
@@ -513,7 +485,7 @@ function UserEdit() {
               </h4>
             </div>
             <div className={`collapse ${isPasswordVisible ? "show" : ""} mt-3`}>
-              <form onSubmit={handleResetPassword}>
+              <form onSubmit={handleResetPassword} noValidate>
                 <div className="row g-3">
                   <div className="col-md-6">
                     <label htmlFor="resetPassword">Nueva Contraseña</label>
@@ -542,42 +514,19 @@ function UserEdit() {
                       onChange={(e) => setConfirmResetPassword(e.target.value)}
                       required
                     />
-                    {passwordMatchError && (
-                      <div className="invalid-feedback">
-                        {passwordMatchError}
-                      </div>
-                    )}
                   </div>
                 </div>
                 <div className="d-flex justify-content-end mt-3">
                   <button
                     type="submit"
                     className="btn btn-outline-warning"
-                    disabled={isLoading.resetPass || !!passwordMatchError}
+                    disabled={isLoading.resetPass || passwordMatchError}
                   >
                     {isLoading.resetPass ? "Restableciendo..." : "Restablecer"}
                   </button>
                 </div>
               </form>
-              {resetPasswordMessage && (
-                <div
-                  className={`alert small mt-3 py-2 alert-${resetPasswordMessage.type}`}
-                >
-                  {resetPasswordMessage.text}
-                </div>
-              )}
             </div>
-
-            {message && (
-              <div
-                className={`alert mt-4 ${
-                  message.type === "success" ? "alert-success" : "alert-danger"
-                }`}
-              >
-                {message.text}
-              </div>
-            )}
-
             <hr className="hr-custom my-4" />
             <div className="d-flex justify-content-between mt-4">
               <button

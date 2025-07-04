@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
 
 // Layouts
 import PublicLayout from "./components/layouts/PublicLayout"; // El nuevo layout público
@@ -24,7 +25,7 @@ const News = lazy(() => import("./views/public/News"));
 const Gallery = lazy(() => import("./views/public/Gallery"));
 const Faq = lazy(() => import("./views/public/Faq"));
 
-// Vistas Privadas 
+// Vistas Privadas
 const Dashboard = lazy(() => import("./views/Dashboard"));
 const Notifications = lazy(() => import("./views/Notifications"));
 const Profile = lazy(() => import("./views/Profile"));
@@ -36,21 +37,41 @@ const PaymentsDashboard = lazy(() => import("./views/admin/PaymentsDashboard"));
 const PaymentAdd = lazy(() => import("./views/admin/PaymentAdd"));
 const PaymentEdit = lazy(() => import("./views/admin/PaymentEdit"));
 const CareersDashboard = lazy(() => import("./views/admin/CareersDashboard"));
-const CareerEnrollments = lazy(() => import("./views/admin/CareerEnrollments"));
+const CareerUserAssignment = lazy(
+  () => import("./views/admin/CareerUserAssignment")
+);
 const CareerAdd = lazy(() => import("./views/admin/CareerAdd"));
 const CareerEdit = lazy(() => import("./views/admin/CareerEdit"));
 const SendMessage = lazy(() => import("./views/admin/SendMessage"));
 // Vistas de Estudiante
 const MyPayments = lazy(() => import("./views/student/MyPayments"));
 const MyCareers = lazy(() => import("./views/student/MyCareers"));
-const StudentSubjectsView = lazy(() => import("./views/student/StudentSubjectsView"));
+const StudentSubjectsView = lazy(
+  () => import("./views/student/StudentSubjectsView")
+);
 // Vistas de Profesor
-const ProfessorCareersOverview = lazy(() => import("./views/professor/ProfessorCareersOverview"));
-const ProfessorSubjectsView = lazy(() => import("./views/professor/ProfessorSubjectsView"));
+const ProfessorCareersOverview = lazy(
+  () => import("./views/professor/ProfessorCareersOverview")
+);
+const ProfessorSubjectsView = lazy(
+  () => import("./views/professor/ProfessorSubjectsView")
+);
 
 function App() {
   return (
     <BrowserRouter>
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       <Routes>
         {/* --- SECCIÓN PÚBLICA --- */}
         {/* Todo lo que esté aquí dentro usará la barra de navegación pública */}
@@ -62,7 +83,7 @@ function App() {
           <Route path="/news" element={<News />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/faq" element={<Faq />} />
-          
+
           {/* El Login es público, pero el guardián PublicRoutes lo oculta si ya iniciaste sesión */}
           <Route element={<PublicRoutes />}>
             <Route path="/login" element={<Login />} />
@@ -76,31 +97,43 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/notifications" element={<Notifications />} />
-            
+
             <Route path="/admin" element={<AdminRoutes />}>
               <Route path="users" element={<UsersDashboard />} />
               <Route path="users/signup" element={<Signup />} />
               <Route path="users/:userId/edit" element={<UserEdit />} />
               <Route path="payments" element={<PaymentsDashboard />} />
               <Route path="payments/add" element={<PaymentAdd />} />
-              <Route path="payments/:paymentId/edit" element={<PaymentEdit />}/>
+              <Route
+                path="payments/:paymentId/edit"
+                element={<PaymentEdit />}
+              />
               <Route path="careers" element={<CareersDashboard />} />
               <Route path="careers/add" element={<CareerAdd />} />
               <Route path="careers/:careerId/edit" element={<CareerEdit />} />
-              <Route path="careers/enrollments" element={<CareerEnrollments />} />
+              <Route path="careers/assign" element={<CareerUserAssignment />} />
               <Route path="messages" element={<SendMessage />} />
-              <Route path="send-message/:recipientId" element={<SendMessage />} />
+              <Route
+                path="send-message/:recipientId"
+                element={<SendMessage />}
+              />
             </Route>
-            
+
             <Route path="/student" element={<StudentRoutes />}>
               <Route path="payments" element={<MyPayments />} />
               <Route path="careers" element={<MyCareers />} />
-              <Route path="career/:careerId/subjects" element={<StudentSubjectsView />} />
+              <Route
+                path="career/:careerId/subjects"
+                element={<StudentSubjectsView />}
+              />
             </Route>
 
             <Route path="/professor" element={<ProfessorRoutes />}>
               <Route path="careers" element={<ProfessorCareersOverview />} />
-              <Route path="career/:careerId/subjects" element={<ProfessorSubjectsView />} />
+              <Route
+                path="career/:careerId/subjects"
+                element={<ProfessorSubjectsView />}
+              />
             </Route>
           </Route>
         </Route>

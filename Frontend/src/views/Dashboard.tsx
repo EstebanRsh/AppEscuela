@@ -22,11 +22,11 @@ function Dashboard() {
 
   // Componente reutilizable para las tarjetas de acceso rápido
   const DashboardCard = ({ to, icon, title, children }: { to: string; icon: string; title: string; children: React.ReactNode }) => (
-    <div className="col-md-6 col-lg-4 mb-4">
+    <div className="col-md-4 col-lg-4 mb-4">
       <Link to={to} className="text-decoration-none">
         <div className="card card-custom dashboard-card h-100">
-          <div className="card-body text-center p-4 d-flex flex-column justify-content-center">
-            <i className={`bi ${icon} display-3 text-warning`}></i>
+          <div className="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <i className={`bi ${icon} display-6 text-warning`}></i>
             <h5 className="card-title mt-3">{title}</h5>
             <p className="card-text text-white-50">{children}</p>
           </div>
@@ -39,9 +39,9 @@ function Dashboard() {
     <InfoContainer>
       <div className="container mt-4">
         {/* Sección de Bienvenida */}
-        <div className="p-4 mb-4 bg-dark-transparent rounded-3 shadow">
-          <div className="container-fluid py-2">
-            <h1 className="display-5 fw-bold">
+        <div className="p-3 mb-3 bg-dark-transparent rounded-3 shadow">
+          <div className="container-fluid">
+            <h1 className="display-7 fw-bold">
               <span className="text-warning">Bienvenido, {user?.first_name || 'a la plataforma'}</span>
             </h1>
             <p className="col-md-10 fs-4">
@@ -51,7 +51,7 @@ function Dashboard() {
         </div>
 
         {/* Tarjetas de Acceso Rápido */}
-        <h2 className="mb-4">Accesos Rápidos</h2>
+        <h2 className="mb-3">Accesos Rápidos</h2>
         <div className="row">
           {/* --- Tarjetas para Administradores --- */}
           {isAdmin && (

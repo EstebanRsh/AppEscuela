@@ -5,7 +5,7 @@ import Footer from "./Footer"; // Reutilizamos el mismo footer
 // --- Componente de la Barra de Navegación Pública ---
 const PublicNavbar = () => {
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <nav className="navbar fixed-top navbar-expand-lg navbar-dark bg-dark shadow-sm">
       <div className="container-fluid">
         <NavLink className="navbar-brand d-flex align-items-center" to="/">
           <i className="bi bi-mortarboard-fill fs-2 me-2"></i>
@@ -50,7 +50,7 @@ function PublicLayout() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <PublicNavbar />
-      <main style={{ flex: 1 }}>
+      <main style={{ flex: 1, paddingTop: '70px' }}>
         <Suspense fallback={<div>Cargando...</div>}>
           <Outlet />
         </Suspense>

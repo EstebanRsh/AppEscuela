@@ -1,42 +1,55 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
+import { toast } from "react-toastify";
 
-// --- TIPOS DE DATOS ---
-type User = { 
-  id: number; 
-  first_name: string; 
+// Define la estructura de un objeto User para tipado estricto.
+type User = {
+  id: number;
+  first_name: string;
   last_name: string;
-  username: string; // Necesario para buscar carreras
+  username: string;
   type: string;
 };
 
-type Career = { 
-  id: number; 
-  name: string; 
+// Define la estructura de un objeto Career.
+type Career = {
+  id: number;
+  name: string;
 };
 
+// Define la estructura de la respuesta de la API para las carreras de un usuario.
 type UserCareerResponse = {
   carrera: string;
 };
 
-// Tipo para los datos del formulario
+// Define la estructura de los datos del formulario de pago.
 type PaymentFormData = {
   id_user: number;
   id_career: number;
   amount: number;
-  affected_month: string; // para el mes (1-12)
-  affected_year: string;  // para el año
+  affected_month: string;
+  affected_year: string;
 };
+
+// Componente reutilizable para mostrar un toast de confirmación con botones.
+const ConfirmationToast = ({ onConfirm, onCancel, message }: { onConfirm: () => void; onCancel: () => void; message: string; }) => (
+  <div>
+    <p className="mb-2">{message}</p>
+    <div className="d-flex justify-content-end gap-2">
+      <button onClick={onConfirm} className="btn btn-sm btn-danger">Confirmar</button>
+      <button onClick={onCancel} className="btn btn-sm btn-secondary">Cancelar</button>
+    </div>
+  </div>
+);
 
 function PaymentEdit() {
   const { paymentId } = useParams<{ paymentId: string }>();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState<PaymentFormData | null>(null);
-  const [allUsers, setAllUsers] = useState<User[]>([]); // Lista completa de usuarios
-  const [userEnrolledCareers, setUserEnrolledCareers] = useState<Career[]>([]); // Carreras del alumno del pago
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [userEnrolledCareers, setUserEnrolledCareers] = useState<Career[]>([]);
   const [isLoading, setIsLoading] = useState({
     page: true,
     update: false,
@@ -44,12 +57,12 @@ function PaymentEdit() {
     careers: false
   });
 
-  // --- EFECTO 1: Carga inicial de los datos del pago y todos los usuarios/carreras ---
   useEffect(() => {
     const token = localStorage.getItem("token") || "";
     const headers = { Authorization: `Bearer ${token}` };
 
     const fetchData = async () => {
+      setIsLoading(prev => ({...prev, page: true}));
       try {
         const [paymentRes, usersRes, careersRes] = await Promise.all([
           fetch(`http://localhost:8000/payment/${paymentId}`, { headers }),
@@ -64,8 +77,6 @@ function PaymentEdit() {
         const paymentData = await paymentRes.json();
         const usersData = await usersRes.json();
         const allCareersData = await careersRes.json();
-
-        // Descomponemos la fecha 'YYYY-MM-DD' en mes y año
         const date = new Date(paymentData.affected_month);
         const month = (date.getUTCMonth() + 1).toString();
         const year = date.getUTCFullYear().toString();
@@ -78,7 +89,6 @@ function PaymentEdit() {
         
         setAllUsers(usersData);
 
-        // --- Lógica para cargar las carreras del alumno específico de este pago ---
         const studentOfPayment = usersData.find((u: User) => u.id === paymentData.id_user);
         if (studentOfPayment) {
             setIsLoading(prev => ({...prev, careers: true}));
@@ -90,16 +100,15 @@ function PaymentEdit() {
             }
             setIsLoading(prev => ({...prev, careers: false}));
         }
-        
       } catch (err: any) {
-        setMessage({ type: "error", text: err.message });
+        toast.error(err.message);
+        navigate("/admin/payments");
       } finally {
         setIsLoading((prev) => ({ ...prev, page: false }));
       }
     };
-
     fetchData();
-  }, [paymentId]);
+  }, [paymentId, navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
@@ -111,16 +120,11 @@ function PaymentEdit() {
     if (!formData) return;
 
     setIsLoading((prev) => ({ ...prev, update: true }));
-    setMessage(null);
-
-    // Reconstruimos la fecha para enviarla al backend
     const fullAffectedDate = `${formData.affected_year}-${formData.affected_month.padStart(2, '0')}-01`;
-
     const token = localStorage.getItem("token") || "";
-    const UPDATE_URL = `http://localhost:8000/payment/update/${paymentId}`;
 
     try {
-      const res = await fetch(UPDATE_URL, {
+      const res = await fetch(`http://localhost:8000/payment/update/${paymentId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -133,35 +137,42 @@ function PaymentEdit() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Error al actualizar.");
 
-      alert(data.message);
+      toast.success(data.message);
       navigate("/admin/payments");
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
+      toast.error(err.message);
     } finally {
       setIsLoading((prev) => ({ ...prev, update: false }));
     }
   };
 
-  const handleDeletePayment = async () => {
-    if (!window.confirm("¿Estás seguro? Esta acción no se puede deshacer.")) return;
-    setIsLoading((prev) => ({ ...prev, delete: true }));
-    setMessage(null);
-    const token = localStorage.getItem("token") || "";
-    const DELETE_URL = `http://localhost:8000/payment/delete/${paymentId}`;
-    try {
-      const res = await fetch(DELETE_URL, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Error al eliminar.");
-      alert(data.message);
-      navigate("/admin/payments");
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
-    } finally {
-      setIsLoading((prev) => ({ ...prev, delete: false }));
-    }
+  const handleDeletePayment = () => {
+    const performDelete = async () => {
+      setIsLoading((prev) => ({ ...prev, delete: true }));
+      const token = localStorage.getItem("token") || "";
+      try {
+        const res = await fetch(`http://localhost:8000/payment/delete/${paymentId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Error al eliminar.");
+        toast.success(data.message);
+        navigate("/admin/payments");
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setIsLoading((prev) => ({ ...prev, delete: false }));
+      }
+    };
+    
+    toast.warning(
+      <ConfirmationToast
+        message="¿Estás seguro? Esta acción no se puede deshacer."
+        onConfirm={() => { toast.dismiss(); performDelete(); }}
+        onCancel={() => toast.dismiss()}
+      />, { autoClose: false, closeOnClick: false }
+    );
   };
 
   if (isLoading.page) {
@@ -172,7 +183,7 @@ function PaymentEdit() {
 
   if (!formData) {
     return (
-      <InfoContainer><div className="container mt-4"><div className="alert alert-danger">No se pudieron cargar los datos del pago.</div></div></InfoContainer>
+      <InfoContainer><div className="container mt-4"><div className="alert alert-danger">No se pudieron cargar los datos del pago. Por favor, vuelve a intentarlo.</div></div></InfoContainer>
     );
   }
   
@@ -193,7 +204,7 @@ function PaymentEdit() {
           <div className="card-header"><h1 className="m-0 h3"><i className="bi bi-pencil-square text-warning me-2"></i>Editando Registro de Pago</h1></div>
           <div className="card-body p-4">
             <p className="lead mb-4">Modifica los campos necesarios para actualizar este pago.</p>
-            <form onSubmit={handleUpdatePayment}>
+            <form onSubmit={handleUpdatePayment} noValidate>
               <div className="row g-3">
                 <div className="col-md-6">
                   <label htmlFor="id_user" className="form-label">Alumno</label>
@@ -225,8 +236,6 @@ function PaymentEdit() {
                   </div>
                 </div>
               </div>
-
-              {message && (<div className={`alert mt-4 alert-${message.type}`}>{message.text}</div>)}
 
               <div className="d-flex justify-content-between mt-4 form-actions-responsive">
                 <button type="submit" className="btn btn-outline-success" disabled={isLoading.update}>

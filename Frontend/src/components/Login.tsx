@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from 'react-toastify';
 
 type LoginProcessResponse = {
   status: string;
@@ -18,13 +19,13 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [alert, setAlert] = useState<{ message: string } | null>(null);
+  /*const [alert, setAlert] = useState<{ message: string } | null>(null);*/
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setAlert(null);
+    //setAlert(null);
 
     try {
       const res = await fetch(LOGIN_URL, {
@@ -38,12 +39,15 @@ export default function Login() {
       if (data.status === "success") {
         localStorage.setItem("token", data.token ?? "");
         localStorage.setItem("user", JSON.stringify(data.user));
+        toast.success("¡Bienvenido! Has iniciado sesión correctamente.")
         navigate("/dashboard");
       } else {
-        setAlert({ message: data.message || "Credenciales inválidas." });
+        //setAlert({ message: data.message || "Credenciales inválidas." });
+        toast.error(data.message || "Credenciales inválidas.");
       }
     } catch (error) {
-      setAlert({ message: "Error al conectar con el servidor." });
+      //setAlert({ message: "Error al conectar con el servidor." });
+      toast.error("Error al conectar con el servidor.");
     } finally {
       setIsLoading(false);
     }
@@ -138,17 +142,6 @@ export default function Login() {
           </div>
         </div>
       </div>
-
-      {alert && (
-        <div
-          className="alert alert-danger position-fixed bottom-0 end-0 m-3 shadow-lg"
-          style={{ zIndex: 1050 }}
-          role="alert"
-        >
-          <i className="bi bi-exclamation-triangle-fill me-2"></i>
-          {alert.message}
-        </div>
-      )}
     </>
   );
 }

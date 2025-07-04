@@ -1,8 +1,7 @@
-// Archivo: Frontend/src/views/admin/PaymentAdd.tsx
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import InfoContainer from '../../components/common/InfoContainer';
+import { toast } from 'react-toastify';
 
 // --- TIPOS DE DATOS ---
 type User = { 
@@ -36,7 +35,6 @@ function PaymentAdd() {
   const [users, setUsers] = useState<User[]>([]);
   const [allCareers, setAllCareers] = useState<Career[]>([]);
   const [userEnrolledCareers, setUserEnrolledCareers] = useState<Career[]>([]);
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [isLoading, setIsLoading] = useState({ 
     page: true, 
     submit: false,
@@ -59,7 +57,7 @@ function PaymentAdd() {
             setUsers(allUsersData.filter((user: User) => user.type === 'alumno'));
             setAllCareers(allCareersData);
         } catch (err: any) {
-            setMessage({ type: 'error', text: err.message });
+           toast.error(err.message);
         } finally {
             setIsLoading(prev => ({...prev, page: false}));
         }
@@ -93,7 +91,7 @@ function PaymentAdd() {
                 setFormData(prev => ({ ...prev, id_career: String(enrolledCareers[0].id) }));
             }
         } catch (err: any) {
-            setMessage({ type: 'error', text: err.message });
+            toast.error(err.message);
         } finally {
             setIsLoading(prev => ({ ...prev, careers: false }));
         }
@@ -113,7 +111,6 @@ function PaymentAdd() {
   const handleAddPayment = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(prev => ({...prev, submit: true}));
-    setMessage(null);
 
     const fullAffectedDate = `${formData.affected_year}-${formData.affected_month.padStart(2, '0')}-01`;
 
@@ -125,21 +122,19 @@ function PaymentAdd() {
     };
 
     const token = localStorage.getItem("token") || "";
-    const ADD_PAYMENT_URL = "http://localhost:8000/payment/add";
     
     try {
-        const res = await fetch(ADD_PAYMENT_URL, {
+        const res = await fetch("http://localhost:8000/payment/add", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
             body: JSON.stringify(paymentDataToSend)
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Ocurrió un error al registrar el pago.");
-        
-        alert("Pago registrado con éxito.");
+        toast.success("Pago registrado con éxito.");
         navigate('/admin/payments');
     } catch (err: any) {
-        setMessage({ type: 'error', text: err.message });
+        toast.error(err.message);
     } finally {
         setIsLoading(prev => ({...prev, submit: false}));
     }
@@ -215,9 +210,6 @@ function PaymentAdd() {
                             </div>
                         </div>
                     </div>
-
-                    {message && <div className={`alert mt-4 alert-${message.type}`}>{message.text}</div>}
-
                     <div className="d-flex justify-content-end mt-4">
                         <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate('/admin/payments')}>Cancelar</button>
                         <button type="submit" className="btn btn-outline-success" disabled={isSubmitDisabled}>
