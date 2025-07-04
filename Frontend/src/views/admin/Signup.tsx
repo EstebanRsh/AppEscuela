@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
-import { Toast, ToastContainer } from "react-bootstrap";
+//import { Toast, ToastContainer } from "react-bootstrap";
+import { toast } from "react-toastify";
 
 function Signup() {
   const navigate = useNavigate();
@@ -18,13 +19,9 @@ function Signup() {
     type: "alumno",
   });
 
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [passwordError, setPasswordError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showToast, setShowToast] = useState(false);
+  //const [showToast, setShowToast] = useState(false);
 
   // Valida que las contraseñas coincidan mientras se escribe
   useEffect(() => {
@@ -39,11 +36,6 @@ function Signup() {
     }
   }, [formData.password, formData.confirmPassword]);
 
-  // Cuando se activa el mensaje, automáticamente se muestra el toast
-  useEffect(() => {
-    if (message) setShowToast(true);
-  }, [message]);
-
   // Maneja los cambios en cualquier input del formulario
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -54,23 +46,26 @@ function Signup() {
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const { dni, ...textFields } = formData;
+    const allFieldsFilled =
+      Object.values(textFields).every((field) => field.trim() !== "") &&
+      dni.trim() !== "";
+
+    if (!allFieldsFilled) {
+      toast.error("Todos los campos son obligatorios.");
+      return;
+    }
     if (passwordError) {
-      setMessage({
-        type: "error",
-        text: "Por favor, corrige los errores antes de continuar.",
-      });
+      toast.error("Por favor, corrige los errores antes de continuar."); // 3. Usar toast
       return;
     }
 
     setIsLoading(true);
-    setMessage(null);
-
     const { confirmPassword, ...signupData } = formData;
     const token = localStorage.getItem("token") || "";
-    const SIGNUP_URL = `http://localhost:8000/users/add`;
 
     try {
-      const response = await fetch(SIGNUP_URL, {
+      const response = await fetch("http://localhost:8000/users/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +73,7 @@ function Signup() {
         },
         body: JSON.stringify({
           ...signupData,
-          dni: parseInt(signupData.dni), // Aseguramos que el DNI sea numérico
+          dni: parseInt(signupData.dni),
         }),
       });
 
@@ -87,11 +82,7 @@ function Signup() {
         throw new Error(result.message || "Ocurrió un error en el registro.");
       }
 
-      setMessage({
-        type: "success",
-        text: result.message || "Usuario registrado con éxito.",
-      });
-      // Limpiamos el formulario después de un registro exitoso
+      toast.success(result.message || "Usuario registrado con éxito."); // 4. Usar toast para éxito
       setFormData({
         username: "",
         password: "",
@@ -103,7 +94,7 @@ function Signup() {
         type: "alumno",
       });
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message });
+      toast.error(error.message); // 5. Usar toast para error
     } finally {
       setIsLoading(false);
     }
@@ -264,26 +255,6 @@ function Signup() {
           </div>
         </div>
       </div>
-
-      {/* 🟨 ToastContainer y Toast */}
-      <ToastContainer position="top-center" className="p-3">
-        <Toast
-          bg={message?.type === "success" ? "success" : "danger"}
-          onClose={() => setShowToast(false)}
-          show={showToast}
-          delay={4000}
-          autohide
-        >
-          <Toast.Body className="d-flex align-items-center text-white">
-            {message?.type === "success" ? (
-              <i className="bi bi-check-circle-fill me-2"></i>
-            ) : (
-              <i className="bi bi-x-circle-fill me-2"></i>
-            )}
-            {message?.text}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
     </InfoContainer>
   );
 }
