@@ -155,11 +155,11 @@ def login_user(us: InputLogin):
                         "status": "success",
                         "token": tkn,
                         "user": user_details, # Enviamos el diccionario que creamos
-                        "message":"User logged in successfully!"
+                        "message":"Logueado exitosamente!"
                     }
                 return JSONResponse(status_code=200, content=res)
         else:
-            res= {"message": "Invalid username or password"}
+            res= {"message": "Usuario o contraseña inválidos"}
             return JSONResponse(status_code=401, content=res)
     except Exception as ex:
         print("Error ---->> ", ex)

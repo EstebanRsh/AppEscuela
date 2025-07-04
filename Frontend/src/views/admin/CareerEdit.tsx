@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
-import { useToast } from "../../components/common/ToastContext";
 
 function CareerEdit() {
   const { careerId } = useParams<{ careerId: string }>();
   const navigate = useNavigate();
-  const { addToast } = useToast();
+
 
   const [careerName, setCareerName] = useState("");
   const [originalCareerName, setOriginalCareerName] = useState(""); // Para el diálogo de confirmación
@@ -59,10 +58,8 @@ function CareerEdit() {
       if (!res.ok) {
         throw new Error(data.message || "Error al actualizar.");
       }
-      addToast(data.message, 'success');
       navigate("/admin/careers");
     } catch (err: any) {
-      addToast(err.message, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -91,10 +88,8 @@ function CareerEdit() {
       if (!response.ok) {
         throw new Error(data.message || "Error al eliminar");
       }
-      addToast(data.message, 'success');
       navigate("/admin/careers");
     } catch (error: any) {
-      addToast(error.message, 'error');
     } finally {
       setIsDeleting(false);
     }
