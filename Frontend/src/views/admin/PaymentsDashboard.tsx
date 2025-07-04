@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import InfoContainer from '../../components/common/InfoContainer';
+import { toast } from "react-toastify";
 
 // Definimos un tipo para la estructura de un pago
 type Payment = {
@@ -14,7 +15,6 @@ type Payment = {
 
 function PaymentsDashboard() {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Estado para la carga
 
   const loggedInUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -22,7 +22,6 @@ function PaymentsDashboard() {
 
   const fetchAllPayments = async () => {
     setIsLoading(true);
-    setMessage(null);
     const token = localStorage.getItem("token") || "";
     const PAYMENTS_URL = "http://localhost:8000/payment/all/detailled";
 
@@ -41,7 +40,7 @@ function PaymentsDashboard() {
 
     } catch (err: any) {
       console.error("Error fetching payments:", err);
-      setMessage(err.message);
+      toast.error(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -79,8 +78,6 @@ return (
           <p className="lead mb-4">
             Aquí puedes ver y administrar todos los registros de pagos del sistema.
           </p>
-
-          {message && <div className="alert alert-danger">{message}</div>}
 
           {isLoading ? (
             <div className="text-center py-5">

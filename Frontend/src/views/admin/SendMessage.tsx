@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import InfoContainer from '../../components/common/InfoContainer';
+import { toast } from 'react-toastify';
 
 // Tipos para los datos
 type User = {
@@ -17,7 +18,6 @@ function SendMessage() {
   const [content, setContent] = useState('');
   const [selectedRecipient, setSelectedRecipient] = useState(recipientId || '');
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [status, setStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Cargar la lista de todos los usuarios para el selector
@@ -42,12 +42,15 @@ function SendMessage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRecipient) {
-      setStatus({ type: 'error', text: 'Por favor, selecciona un destinatario.' });
+      toast.error('Por favor, selecciona un destinatario.');
       return;
+    }
+        if (!content.trim()) {
+        toast.error('El contenido del mensaje no puede estar vacío.');
+        return;
     }
 
     setIsLoading(true);
-    setStatus(null);
     const token = localStorage.getItem('token');
 
     try {
@@ -69,11 +72,11 @@ function SendMessage() {
         throw new Error(result.detail || 'Error al enviar el mensaje.');
       }
 
-      setStatus({ type: 'success', text: result.detail || 'Mensaje enviado correctamente.' });
+      toast.success(result.detail || 'Mensaje fue enviado correctamente.');
       setContent(''); // Limpiar el campo de texto
       
     } catch (error: any) {
-      setStatus({ type: 'error', text: error.message });
+     toast.error(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +93,7 @@ function SendMessage() {
             </h1>
           </div>
           <div className="card-body p-4">
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit}noValidate>
               <div className="mb-3">
                 <label htmlFor="recipient" className="form-label">Destinatario</label>
                 <select
@@ -119,12 +122,6 @@ function SendMessage() {
                   required
                 />
               </div>
-
-              {status && (
-                <div className={`alert alert-${status.type === 'success' ? 'success' : 'danger'} mt-3`}>
-                  {status.text}
-                </div>
-              )}
 
               <div className="d-flex justify-content-end mt-4">
                 <button type="button" className="btn btn-outline-secondary me-2" onClick={() => navigate(-1)}>

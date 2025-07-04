@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
+import { toast } from "react-toastify";
 
 // Definimos el tipo para una Carrera
 type Career = {
@@ -10,12 +11,10 @@ type Career = {
 
 function CareersDashboard() {
   const [careers, setCareers] = useState<Career[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCareers = async () => {
     setIsLoading(true);
-    setMessage(null);
     const token = localStorage.getItem("token") || "";
     const CAREERS_URL = "http://localhost:8000/career/all";
 
@@ -35,9 +34,7 @@ function CareersDashboard() {
       }
     } catch (err: any) {
       console.error("Error fetching careers:", err);
-      setMessage(
-        err.message || "No se pudieron obtener los datos del servidor."
-      );
+      toast.error(err.message || "No se pudieron obtener los datos del servidor.");
     } finally {
       setIsLoading(false);
     }
@@ -84,9 +81,6 @@ function CareersDashboard() {
             <p className="lead mb-4">
               Aquí puedes ver, crear y administrar las carreras del sistema.
             </p>
-
-            {message && <div className="alert alert-danger">{message}</div>}
-
             {isLoading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-warning" role="status">

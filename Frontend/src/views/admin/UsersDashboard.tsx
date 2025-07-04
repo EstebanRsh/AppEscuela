@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import InfoContainer from "../../components/common/InfoContainer";
+import { toast } from "react-toastify";
 
 // Se define un tipo más específico para el usuario
 type User = {
@@ -14,7 +15,6 @@ type User = {
 
 function UsersDashboard() {
   const [users, setUsers] = useState<User[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const loggedInUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -22,7 +22,6 @@ function UsersDashboard() {
 
   const fetchUsers = async () => {
     setIsLoading(true);
-    setMessage(null);
     const token = localStorage.getItem("token") || "";
     const USERS_URL = "http://localhost:8000/users/all";
 
@@ -43,7 +42,7 @@ function UsersDashboard() {
       setUsers(data);
     } catch (error: any) {
       console.error("Error fetching users:", error);
-      setMessage(error.message);
+      toast.error(error.message);
       setUsers([]);
     } finally {
       setIsLoading(false);
@@ -79,10 +78,6 @@ function UsersDashboard() {
             <p className="lead mb-4">
               Desde aquí puedes ver la lista de usuarios y editar sus perfiles.
             </p>
-
-            {/* El mensaje de error y el spinner de carga se mantienen igual */}
-            {message && <div className="alert alert-danger">{message}</div>}
-
             {isLoading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-warning" role="status">
