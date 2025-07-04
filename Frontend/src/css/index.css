@@ -12,14 +12,14 @@ body {
   color: white;
 }
 
-.info-container {
+/*.info-container {
   background-color: rgba(0, 0, 0, 0.479);
   padding: 1.5rem;
   border-radius: 0.2rem;
   margin-top: 0.2rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  min-height: 100vh;
-}
+  min-height: 83vh;
+}*/
 
 .hr-custom {
   border-color: #555;
